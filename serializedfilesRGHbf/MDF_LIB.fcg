@@ -1,0 +1,27 @@
+function modifier MDF_ZDETypeGetByIndex(object to_obj, int ti_type, int ti_index)
+{
+	int	ti_i;
+	int ti_count = 0;
+	modifier tm_mdf;
+	tm_mdf = @o(to_obj) OBJ_MDFGet( ViD_ENGTYPE_ZDE, 0);
+	ti_i = 0;
+	while( tm_mdf != SCR_CO_MdfNull )
+	{
+		if( @m( tm_mdf) ZDE_CustomBitsGet() & ti_type )
+		{
+			if( ti_count == ti_index )
+				break;
+			else
+				ti_count++;
+		}
+		ti_i++;
+		tm_mdf = @o(to_obj) OBJ_MDFGet( ViD_ENGTYPE_ZDE,ti_i);
+	}
+	return tm_mdf;
+}
+
+function export modifier MDF_ZDETypeGet(object to_obj, int ti_type)
+{
+	return MDF_ZDETypeGetByIndex(to_obj, ti_type, 0);
+}
+

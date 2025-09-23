@@ -1,0 +1,199 @@
+int		ti_asynchrone,ti_UNIV_LoadMap,worldKey;
+
+if (!i_flag_Bink) // Chargement sans lecture de bink
+{
+	if (WOR_NS_load_something)
+	{
+		// log:
+		DBG_TraceString(0, "NS_universe: loading something '");
+		DBG_TraceKey(0, WOR_NS_load_something);
+		DBG_TraceString(0, "'\n");
+	
+		// load the wor:
+		WOR_LoadList(WOR_NS_load_something, 0, 0);
+		
+		// clear the request:
+		WOR_NS_load_something = 0;
+	}
+	
+	if (UNIV_LoadMap != -1)
+	{
+		if (i_universeJustValidated)
+		{
+			i_universeJustValidated = false;
+			Univers_LoadHub();
+		}
+
+		DBG_TraceString(8, "Loading");
+		DBG_TraceWString(8, @u MAP[Map_SearchByID(UNIV_LoadMap)].m_Name);
+		DBG_TraceString(8, "\n");
+		
+		ti_asynchrone = false;
+		if (UNIV_LoadMapFlags & Cf_LoadMapFlags_Asynchrone)
+		{
+			ti_asynchrone = true;
+		}
+	
+		int ti_activeWorldKey = UNIV_LoadMapActiveWorldKey;
+		if (UNIV_LoadMapFlags & Cf_LoadMapFlags_NoActiveWorld)
+		{
+			ti_activeWorldKey = 0;
+		}
+
+		//---------------------------------------------
+		// Map mode manager (collecte / time attack)
+		//---------------------------------------------
+		switch (i_universeMapMode)
+		{
+			case C_MAP_MODE_COLLECTE:
+				worldKey = @u MAP[Map_SearchByID(UNIV_LoadMap )].m_Key;
+				break;
+			case C_MAP_MODE_TIME_ATTACK:
+				 worldKey = @u MAP[Map_SearchByID(UNIV_LoadMap )].m_Key_TimeAttack;
+				 if (worldKey == -1)
+				 {
+				 	worldKey = @u MAP[Map_SearchByID(UNIV_LoadMap )].m_Key;
+				 	DBG_TraceString(0,"Map unavailable in time attack mode, loading collecte version");
+				 }
+				 break;
+		}
+		i_universeMapMode = C_MAP_MODE_DEFAULT;
+		//---------------------------------------------
+
+		if (UNIV_LoadMapFlags & Cf_LoadMapFlags_LoadListMask)
+		{
+#ifdef Ci_USE_WOG_LOADING
+			WOR_LoadGroupMask(worldKey,ti_asynchrone, ti_activeWorldKey, &ai_LoadMapMask[0], 200);
+#else
+			WOR_LoadListMask(worldKey,ti_asynchrone, ti_activeWorldKey, &ai_LoadMapMask[0], 200);
+#endif	
+		}
+		else
+		{
+#ifdef Ci_USE_WOG_LOADING
+			WOR_LoadGroup(worldKey, ti_asynchrone, ti_activeWorldKey);
+#else
+			WOR_LoadList(worldKey, ti_asynchrone, ti_activeWorldKey);
+#endif		
+		}
+		UNIV_LoadMapPrev = UNIV_LoadMapOld;
+		UNIV_LoadMapOld = UNIV_LoadMap;
+		UNIV_LoadMap = -1;
+	}
+	
+	
+	if (( UNIV_LoadMapFlags & Cf_LoadMapFlags_Asynchrone) && WOR_IsLoading() == 2)
+	{
+		WOR_FlushList();
+		
+		wait_time(0.01);                              // permet d'attendre que les mondes chargés soient là !	
+	}
+}
+else // Chargement avec lecture d'un bink
+{
+	if (WOR_IsLoading() == 0)
+	{
+		i_flag_Flush = 0;
+		i_ReadyToFlush = 0;
+	
+		if (UNIV_LoadMap != -1)
+		{		
+			MGM_SetActive(false);	
+			
+			i_NoPadTRC = true;			
+			
+//			get_camera = SCR_CO_ObjNull;
+//			
+//			SCR_MainActorClear(0);	
+	
+			//---------------------------------------------
+			// Map mode manager (collecte / time attack)
+			//---------------------------------------------
+			
+			switch (i_universeMapMode)
+			{
+				case C_MAP_MODE_COLLECTE:
+					worldKey = @u MAP[Map_SearchByID(UNIV_LoadMap )].m_Key;
+					break;
+				case C_MAP_MODE_TIME_ATTACK:
+					 worldKey = @u MAP[Map_SearchByID(UNIV_LoadMap )].m_Key_TimeAttack;
+					 if (worldKey == -1)
+					 {
+					 	worldKey = @u MAP[Map_SearchByID(UNIV_LoadMap )].m_Key;
+					 	DBG_TraceString(0,"Map unavailable in time attack mode, loading collecte version");
+					 }
+					 break;
+			}
+			//---------------------------------------------
+
+			if (UNIV_LoadMapFlags & Cf_LoadMapFlags_LoadListMask)
+			{
+#ifdef Ci_USE_WOG_LOADING
+				WOR_LoadGroupMask(worldKey,true, UNIV_LoadMapActiveWorldKey, &ai_LoadMapMask[0], 200);
+#else
+				WOR_LoadListMask(worldKey,true, UNIV_LoadMapActiveWorldKey, &ai_LoadMapMask[0], 200);
+#endif	
+			}
+			else
+			{
+#ifdef Ci_USE_WOG_LOADING
+				WOR_LoadGroup(worldKey, true, UNIV_LoadMapActiveWorldKey);
+#else		
+				WOR_LoadList(worldKey, true , UNIV_LoadMapActiveWorldKey);
+#endif		
+			}	
+			if (Map_SearchByID(UNIV_LoadMap ) == -1)
+				DBG_TraceString(2,"Echec chargement map\n");
+			else
+				DBG_TraceString(2,"Chargement ok\n");
+	
+			UNIV_LoadMapPrev = UNIV_LoadMapOld;
+			UNIV_LoadMapOld = UNIV_LoadMap;
+			UNIV_LoadMap = -1;
+			
+//			WOR_PauseApply(0,true);
+		}
+	}	
+	
+	if ( WOR_IsLoading() == 2)
+	{
+		i_ReadyToFlush = 1;	
+	
+		//On attend que le flag Flush soit mis à 1 par l'IA  Test_LoadBink
+		if (i_flag_Flush)
+		{
+			get_camera = SCR_CO_ObjNull;
+			
+			SCR_MainActorClear(0);		
+		
+			WOR_FlushList();
+			wait_time(0.01);                              // en fait le flush est pas immédiat attendre 1 trame.
+			
+			i_Univ_binkToPlay[0] = -1;
+			i_flag_Bink = 0;	
+			i_NoPadTRC = 0;
+			WOR_BackColorSet(color_noire);	
+			
+			wait_time(0.01);                              // permet d'attendre que les mondes chargés soient là !	
+			
+			MGM_SetActive(true);
+			
+//			WOR_PauseApply(0,true);				
+			
+//			WOR_Reinit();
+			
+//			wait_time(0.01);                              // permet d'attendre que les mondes chargés soient là !	
+
+//			modifier mdf_FADE = WOR_MDFGetByID( ViD_ENGTYPE_AfterFX,Ci_WOR_MDF_AFX_ID_FADE_LOADING);
+//			if ( mdf_FADE )
+//			{
+//				@m( mdf_FADE ) MDF_Setv( 5, 0, @u v_FadeColor);
+//				@m( mdf_FADE ) MDF_Setf( 6, 0, 0.0);				
+//			}			
+			
+//			WOR_UnPauseApply(0,true);
+							
+		}
+	}
+}
+

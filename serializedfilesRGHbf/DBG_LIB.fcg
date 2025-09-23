@@ -1,0 +1,186 @@
+function void DBG_Display_TxtInt(vector POS, string STR, int I)
+{
+	int		ti_ID;
+	
+	ti_ID = DBG_StrCreate(STR,POS,0x00FFFFFF,0);
+	DBG_StrAppendInt(ti_ID,I);
+}
+
+function void DBG_Display_TxtFloat(vector POS, string STR, float FLO)
+{
+	int		ti_ID;
+	
+	ti_ID = DBG_StrCreate(STR,POS,0x00FFFFFF,0);
+	DBG_StrAppendFloat(ti_ID,FLO,4);
+}
+
+function void DBG_Display_TxtVector(vector POS, string STR, vector VEC)
+{
+	int		ti_ID;
+	
+	ti_ID = DBG_StrCreate(STR,POS,0x00FFFFFF,0);
+	DBG_StrAppendVector(ti_ID,VEC);
+}
+
+function void DBG_Display_TxtObject(vector POS, string STR, object OB)
+{
+	int		ti_ID;
+	
+	ti_ID = DBG_StrCreate(STR,POS,0x00FFFFFF,0);
+	DBG_StrAppendObj(ti_ID,OB);
+}
+
+function void DBG_Display_TxtText(vector POS, string STR, string STR2)
+{
+	int		ti_ID;
+	
+	ti_ID = DBG_StrCreate(STR,POS,0x00FFFFFF,0);
+	DBG_StrAppendText(ti_ID,STR2);
+}
+
+//------------------------------------------------------------------------
+//			Display 2D string
+//------------------------------------------------------------------------
+function void DISPLAY_2D_STRING(vector tv_pos, wstring ts_val)
+{
+	int			s_str;
+	s_str = STR_Display_W("/F00//jxgyc//CFFFFFF/", tv_pos, 0);
+	STR_InsText_W(s_str,-1,ts_val);
+}
+//------------------------------------------------------------------------
+//			Display 2D float
+//------------------------------------------------------------------------
+function void DISPLAY_2D_FLOAT(vector tv_pos, float tf_val, int ti_nb_dec)
+{
+	int			s_str;
+	s_str = STR_Display_W("/F00//jxgyc//CFFFFFF/", tv_pos, 0);
+	STR_InsFloat(s_str,-1,tf_val,ti_nb_dec);
+}
+//------------------------------------------------------------------------
+//			Display 2D integer
+//------------------------------------------------------------------------
+function void DISPLAY_2D_INT(vector tv_pos, int ti_val)
+{
+	int			s_str;
+	s_str = STR_Display_W("/F00//jxgyc//CFFFFFF/", tv_pos, 0);
+	STR_InsInt(s_str,-1,ti_val);
+}
+//------------------------------------------------------------------------
+//			Display 2D vector
+//------------------------------------------------------------------------
+function void DISPLAY_2D_VECTOR(vector tv_pos, vector &tv_val)
+{
+	int			s_str;
+	s_str = STR_Display_W("/F00//jxgyc//CFFFFFF/", tv_pos, 0);
+	STR_InsVector(s_str,-1,tv_val);
+}
+
+//------------------------------------------------------------------------
+//			Display 2D integer
+//------------------------------------------------------------------------
+function void DISPLAY_2D_INT_SIZE(vector tv_pos, int ti_val, int ti_size)
+{
+	int			s_str;
+	s_str = STR_Display_W("/F00//jxgyc//CFFFFFF/", tv_pos, 0);
+
+	switch (ti_size)
+	{
+		case 0:
+			STR_InsText_W(s_str,-1,string_size_1);
+			break;
+		case 1:
+			STR_InsText_W(s_str,-1,string_size_2);
+			break;
+		case 2:
+			STR_InsText_W(s_str,-1,string_size_3);
+			break;
+		case 3:
+			STR_InsText_W(s_str,-1,string_size_4);
+			break;
+		case 4:
+			STR_InsText_W(s_str,-1,string_size_5);
+			break;
+	}
+
+	STR_InsInt(s_str,-1,ti_val);
+}
+
+//------------------------------------------------------------------------
+//			Display 2D string
+//------------------------------------------------------------------------
+function void DISPLAY_2D_STRING_FULL(vector tv_pos, wstring ts_val, int ti_size_ID, wstring ps_Color, wstring ps_StringPos, int pi_FontID)
+{
+	int			s_str;
+
+	s_str = STR_Display_W("/F", tv_pos, 0);
+	STR_InsInt(s_str,-1,pi_FontID);
+	STR_InsText_W(s_str,-1,"//C");
+	if (!ps_Color)
+		ps_Color = "FFFFFF";
+	STR_InsText_W(s_str,-1,ps_Color);
+	STR_InsText_W(s_str,-1,"/");
+
+	if (!ps_StringPos)
+		ps_StringPos = string_left_center;	
+	
+	STR_InsText_W(s_str, -1, ps_StringPos);
+
+	switch (ti_size_ID)
+	{
+		case 0:
+			STR_InsText_W(s_str,-1,string_size_1);
+			break;
+		case 1:
+			STR_InsText_W(s_str,-1,string_size_2);
+			break;
+		case 2:
+			STR_InsText_W(s_str,-1,string_size_3);
+			break;
+		case 3:
+			STR_InsText_W(s_str,-1,string_size_4);
+			break;
+		case 4:
+			STR_InsText_W(s_str,-1,string_size_5);
+			break;
+	}
+
+	STR_InsText_W(s_str,-1,ts_val);
+}
+
+//------------------------------------------------------------------------
+//			Check scipt order
+//------------------------------------------------------------------------
+function void DBG_CheckMDFOrder_Action_Dyna_Script()
+{
+	int ti_ActionOk = false, ti_DynaOk = false, ti_ScrOk = false, ti_NbMdf, ti_i;
+	modifier tmdf_Tmp;
+	
+	ti_NbMdf = OBJ_MdfCountGet();	
+
+	for (ti_i = 0; ti_i < ti_NbMdf; ti_i++)
+	{
+		tmdf_Tmp = OBJ_MdfByRankGet(ti_i);
+		if (!ti_ActionOk)
+		{
+			if (@m(tmdf_Tmp) MDF_GetType() == ViD_ENGTYPE_ACTions)
+				ti_ActionOk = true;
+		}
+		else if (ti_ActionOk && !ti_DynaOk) 
+		{
+			if (@m(tmdf_Tmp) MDF_GetType() == ViD_ENGTYPE_DYNamic)
+				ti_DynaOk = true;
+		}
+		else if (ti_ActionOk && ti_DynaOk && !ti_ScrOk) 
+		{
+			if (@m(tmdf_Tmp) MDF_GetType() == ViD_ENGTYPE_SCRipt)
+				ti_ScrOk = true;
+		}
+	}
+	
+	DBG_TraceString(0, "## CheckMDFOrder ## ");
+	DBG_TraceObj(0, SCR_ObjMe());
+	DBG_TraceEOL(0);
+	DBG_Assert(ti_ActionOk, "## CheckMDFOrder ## Modifier ACTion n'est pas present ou est mal placé! \n## CheckMDFOrder ## Ordre ACT -> DYN -> SCR");
+	DBG_Assert(ti_DynaOk, "## CheckMDFOrder ## Modifier DYNamic n'est pas present ou est mal placé ! \n## CheckMDFOrder ## Ordre ACT -> DYN -> SCR");
+	DBG_Assert(ti_ScrOk, "## CheckMDFOrder ## Modifier SCRipt n'est pas present ou est mal placé ! \n## CheckMDFOrder ## Ordre ACT -> DYN -> SCR");
+}

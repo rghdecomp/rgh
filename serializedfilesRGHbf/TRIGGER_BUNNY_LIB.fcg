@@ -1,0 +1,190 @@
+
+///TrigTest_TimerWithJoyButtonPressed int1 Key int5 InvertResult float1 Time
+// Key :	IO_JoyButton_A = 1
+//			IO_JoyButton_B = 2
+//			IO_JoyButton_C = 3
+//			IO_JoyButton_Z = 4
+// InvertResult : permet de tester si le bouton est appuyé ou relaché
+// Time : durée durant laquelle le test de boutton doit etre vrai pour valider le trigger.
+function_trigger_global int TrigTest_TimerWithJoyButtonPressed(stock & ref)
+{
+	int		ti_key;
+	int		ti_inv_test;
+	int		ti_return;
+
+	switch ( ref.i32_1)
+	{
+		case 1:
+			ti_key = IO_JoyButton_A;
+			break;
+		case 2:
+			ti_key = IO_JoyButton_B;
+			break;
+		case 3:
+			ti_key = IO_JoyButton_C;
+			break;
+		case 4:
+			ti_key = IO_JoyButton_Z;
+			break;
+	}
+	
+	if (IO_JoystickButtonPressed( 0, ti_key))
+		ti_return = true;
+	else
+		ti_return = false;
+	if (ref.i32_5)
+		ti_return = 1 - ti_return;
+	
+	if ( ti_return)
+	{
+		if (!ref.i32_2)
+		{
+			ref.i32_2 = true;
+			ref.f32_2 = ref.f32_1;
+			return false;
+		}
+		else
+		{
+			ref.f32_2 -= MTH_FloatMin(TIME_GetDT(), ref.f32_2);
+			if (MTH_FloatNullEpsilon(ref.f32_2))
+			{
+				return true;
+			}
+		}
+	}
+	else
+		ref.i32_2 = 0;
+
+	return false;
+}
+
+///TrigExec_SNDPlay int1 MDF_Rank int2 SND_ID int3 SND_Flag obj1 MDF_Owner obj2 SND_Pos
+//MDF_Rank		Rank modifier
+//SND_ID		ID du son dans la bank
+//SND_Flag		Flag du sound play
+//MDF_Owner	Owner du modifier de son
+//SND_Pos		Position du son 3D
+function_trigger_global int TrigExec_SNDPlay(stock & ref)
+{
+	modifier 	tm_mdf_SND;
+	tm_mdf_SND = @o( ref.po_Obj1) OBJ_MDFGet(ViD_ENGTYPE_SoundBank,ref.i32_1);
+	if ( tm_mdf_SND)
+	{
+		if ( ! ref.po_Obj2)
+			ref.po_Obj2 = ref.po_Obj1;
+		@m( tm_mdf_SND) SND_Play( ref.i32_2, ref.po_Obj2, ref.i32_3);
+	}
+	return true;
+}
+
+
+
+///TrigTest_ItemXSCount
+// Compte le nombre d'XS dans le caddie.
+function_trigger_global int TrigTest_ItemXSCount(stock & ref)
+{
+	return @u i_collecte_item_count;
+}
+
+/////TrigExec_MatChangeID obj1 MDF_Owner int1 ID_OFF int2 ID_ON
+//function_trigger_global int TrigExec_MatChangeID(stock & ref)
+//{
+//	modifier tmdf_vis = @o(ref.po_Obj1) OBJ_MDFGet(ViD_ENGTYPE_VISual, 0);
+//	i_mat = @m(tmdf_vis) MATANIM_CreateInstanceAnim(ti_idx);
+//	mat
+//}
+
+
+///TrigExec_XL_Clean
+//	Clean la XL de l univers pour ne pas voir les lapin porter rien.
+function_trigger_global int TrigExec_XL_Clean(stock & stk_params)
+{
+	@u o_lit_bulle = SCR_CO_ObjRefNull;
+	
+	return 0;
+}
+
+///TrigExex_NearFar_Set int1 Near_Far
+// 0 map en intérieur
+// 1 map en extérieur
+function_trigger_global int TrigExex_NearFar_Set( stock & stk_params)
+{
+	modifier tm_mdf;
+	if ( stk_params.i32_1 == 0)
+	{
+		tm_mdf = WOR_MDFGetByID( ViD_ENGTYPE_RenDerParams,Ci_WOR_MDF_NEARFAR_Low);
+		@m( tm_mdf) MDF_ControlApplySet( true);
+		tm_mdf = WOR_MDFGetByID( ViD_ENGTYPE_RenDerParams,Ci_WOR_MDF_NEARFAR_Far);
+		@m( tm_mdf) MDF_ControlApplySet( false);
+	}
+	else if ( stk_params.i32_1 == 1)
+	{
+		tm_mdf = WOR_MDFGetByID( ViD_ENGTYPE_RenDerParams,Ci_WOR_MDF_NEARFAR_Low);
+		@m( tm_mdf) MDF_ControlApplySet( false);
+		tm_mdf = WOR_MDFGetByID( ViD_ENGTYPE_RenDerParams,Ci_WOR_MDF_NEARFAR_Far);
+		@m( tm_mdf) MDF_ControlApplySet( true);
+	}
+
+	return true;
+}
+
+///TrigExec_VisNoCulling_Set obj1 object int1 on #enum("False" 0 "True" 1) int2 i_cible #enum("0 - Lapin" 0 "1 - Chien" 1) int3 i_bone #enum("0 - Bassin" 0 "1 - Oreilles" 1)
+// objet : cible dont on va modifier le culling
+// on	  : true = no culling, false = culling
+function_trigger_global int TrigExec_VisNoCulling_Set(stock &_stk_params)
+{
+	object to_Object 		= _stk_params.po_Obj1;	
+	int 	ti_BoneBassin = 1;
+	object to_Bassin;
+	modifier tmdf_VisBassin;
+	
+	DBG_Assert(to_Object, "## TrigExec_VisNoCulling ## Vous devez preciser un objet");
+	
+	modifier tmdf_Skl = @o(to_Object) OBJ_MDFGet(ViD_ENGTYPE_SKeLeton, 0);
+	
+	DBG_Assert(tmdf_Skl, "## TrigExec_VisNoCulling ## Vous l'objet en parametre n'a pas de squelette");	
+
+	if ( _stk_params.i32_3 == 0)	
+	{
+		to_Bassin = @m(tmdf_Skl) SKL_ObjGetByChannel(ti_BoneBassin);
+		if (to_Bassin)
+		{
+			if ( ! _stk_params.i32_2)
+				tmdf_VisBassin = @o(to_Bassin) OBJ_MDFGet(ViD_ENGTYPE_VISual, 1);	
+			else
+			{
+				to_Bassin = @m(tmdf_Skl) SKL_ObjGetByChannel(81);
+				tmdf_VisBassin = @o(to_Bassin) OBJ_MDFGet(ViD_ENGTYPE_VISual, 0);				
+			}
+			
+			if (_stk_params.i32_1)
+				@m(tmdf_VisBassin) VIS_DrawMaskSet(K3D_CDM_NoCulling, none);
+			else
+				@m(tmdf_VisBassin) VIS_DrawMaskSet(none, K3D_CDM_NoCulling);
+		}
+	}
+	else if ( _stk_params.i32_3 == 1)	
+	{
+		//Les oreilles sont sur le torse... sans commentaire.
+		to_Bassin = @m(tmdf_Skl) SKL_ObjGetByChannel(3);
+		if (to_Bassin)
+		{
+			tmdf_VisBassin = @o(to_Bassin) OBJ_MDFGet(ViD_ENGTYPE_VISual, 0);	
+			
+			if (_stk_params.i32_1)
+				@m(tmdf_VisBassin) VIS_DrawMaskSet(K3D_CDM_NoCulling, none);
+			else
+				@m(tmdf_VisBassin) VIS_DrawMaskSet(none, K3D_CDM_NoCulling);
+		}
+	}	
+	return true;
+}
+
+///TrigExec_SpeedSet obj1 o_Actor obj2 o_Sens float1 f_Speed
+function_trigger_global int TrigExec_SpeedSet(stock &_stk_params)
+{
+	object to_Object 		= _stk_params.po_Obj1;
+	modifier mdf_dyn		= @o( to_Object) OBJ_MDFGet( ViD_ENGTYPE_DYNamic, 0);
+	@m( mdf_dyn) DYN_SpeedSet( @o( _stk_params.po_Obj2) OBJ_SightGet() * _stk_params.f32_1);
+	return true;
+}

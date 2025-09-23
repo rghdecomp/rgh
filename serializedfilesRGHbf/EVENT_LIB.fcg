@@ -1,0 +1,251 @@
+
+//================================================================================================================
+// VISION
+//================================================================================================================
+//
+//function void EVENT_VisionLifeLocalisation_Add(int ti_ID, vector tv_pos, float tf_life_cur, float tf_life_max, int ti_flags, int ti_node, object to_node)
+//{
+//	modifier		tmod_world_msg;
+//	message		tmsg_temp;
+//	
+//	MSSG_SetNull(tmsg_temp);
+//	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+//	
+//	MSSG_Vision_Pos(tmsg_temp) = tv_pos;
+//	MSSG_Vision_LifeCur(tmsg_temp) = tf_life_cur;
+//	MSSG_Vision_LifeMax(tmsg_temp) = tf_life_max;
+//	MSSG_Vision_ID(tmsg_temp) = ti_ID;
+//	MSSG_Vision_Flags(tmsg_temp) = ti_flags;
+//	
+//	MSSG_Vision_LocalisationNodeID(tmsg_temp) = ti_node;
+//	MSSG_Vision_LocalisationNodeGao(tmsg_temp) = to_node;
+//	
+//	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_VISION);
+//	@m(tmod_world_msg) MSSG_Push(tmsg_temp, MSSG_AddEOF );
+//}
+
+function void EVENT_VisionLifeNavMesh_Add(int ti_ID, vector tv_pos, float tf_life_cur, float tf_life_max, int ti_flags, modifier tmdf_navmesh_COB, int ti_nav_tri)
+{
+	modifier		tmod_world_msg;
+	message		tmsg_temp;
+	
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	// vision
+	MSSG_Vision_Pos(tmsg_temp) = tv_pos;
+	MSSG_Vision_ID(tmsg_temp) = ti_ID;
+	MSSG_Vision_Flags(tmsg_temp) = ti_flags;
+
+	// life
+	MSSG_Vision_LifeCur(tmsg_temp) = tf_life_cur;
+	MSSG_Vision_LifeMax(tmsg_temp) = tf_life_max;
+	
+	// nav
+	MSSG_Vision_NavMesh_COB(tmsg_temp) = tmdf_navmesh_COB;
+	MSSG_Vision_NavMesh_Tri(tmsg_temp) = ti_nav_tri;
+	
+	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_VISION);
+	@m(tmod_world_msg) MSSG_Push(tmsg_temp, MSSG_AddEOF );
+}
+
+function void EVENT_VisionLife_Add(int ti_ID, vector tv_position, float tf_life_cur, float tf_life_max, int ti_flags)
+{
+//	EVENT_VisionLifeLocalisation_Add(ti_ID, tv_position, tf_life_cur, tf_life_max, ti_flags, -1, SCR_CO_ObjNull);
+	EVENT_VisionLifeNavMesh_Add(ti_ID, tv_position, tf_life_cur, tf_life_max, ti_flags, SCR_CO_MdfNull, -1);
+}
+
+function void EVENT_Vision_Add(int ti_ID, vector tv_position, int ti_flags)
+{
+	EVENT_VisionLife_Add(ti_ID, tv_position, -1.0, -1.0, ti_flags);
+}
+
+//================================================================================================================
+// SOUND
+//================================================================================================================
+
+function void EVENT_SoundCheckPosGaoNavZone_Add(int ti_type, vector tv_pos, float tf_dist, vector tv_check_pos, object to_actor, modifier tmdf_navmesh_cob, int ti_navmesh_tri, int ti_navmesh_zone)
+{
+	modifier		tmod_world_msg;
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_Sound_Type(tmsg_temp) = ti_type;
+	MSSG_Sound_Pos(tmsg_temp) = tv_pos;	// la position à laquelle le son est émis
+	MSSG_Sound_Dist(tmsg_temp) = tf_dist;
+	MSSG_Sound_CheckPos(tmsg_temp) = tv_check_pos;	// la position que le son indique de checker (exemple, un cri : "dans la cuisine !")
+	MSSG_Sound_CheckActor(tmsg_temp) = to_actor;
+	
+	MSSG_Sound_NavMesh_COB(tmsg_temp) = tmdf_navmesh_cob;
+	MSSG_Sound_NavMesh_Tri(tmsg_temp) = ti_navmesh_tri;
+	MSSG_Sound_NavMesh_Zone(tmsg_temp) = ti_navmesh_zone;
+	
+	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_SOUND);
+	@m(tmod_world_msg) MSSG_Push(tmsg_temp, MSSG_AddEOF );	
+}
+
+function void EVENT_SoundCheckPosGao_Add(int ti_type, vector tv_pos, float tf_dist, vector tv_check_pos, object to_actor)
+{
+	EVENT_SoundCheckPosGaoNavZone_Add(ti_type, tv_pos, tf_dist, tv_check_pos, to_actor, SCR_CO_MdfNull, -1, -1);
+}
+
+function void EVENT_SoundCheckPos_Add(int ti_type, vector tv_pos, float tf_dist, vector tv_check_pos)
+{
+	EVENT_SoundCheckPosGao_Add(ti_type, tv_pos, tf_dist, tv_check_pos, SCR_CO_ObjNull);
+}
+
+function void EVENT_Sound_Add(int ti_type, vector tv_pos, float tf_dist)
+{
+	EVENT_SoundCheckPosGao_Add(ti_type, tv_pos, tf_dist, tv_pos, SCR_CO_ObjNull);
+}
+
+//================================================================================================================
+// ITEM
+//================================================================================================================
+
+function void EVENT_Item_Add(int ti_type, vector tv_pos, int ti_flags, float tf_ground_duration)
+{
+	modifier		tmod_world_msg;
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_Item_Type(tmsg_temp) = ti_type;
+	MSSG_Item_Flags(tmsg_temp) = ti_flags;
+	MSSG_Item_Pos(tmsg_temp) = tv_pos;
+	MSSG_Item_OnGroundDuration(tmsg_temp) = tf_ground_duration;
+	
+	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_ITEM);
+	@m(tmod_world_msg) MSSG_Push(tmsg_temp, MSSG_AddEOF );	
+}
+
+
+//================================================================================================================
+// INTERACT
+//================================================================================================================
+
+function void EVENT_Interact_Add(int ti_type, int ti_value, vector tv_pos)
+{
+	modifier		tmod_world_msg;
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_Interact_Type(tmsg_temp) = ti_type;
+	MSSG_Interact_Value(tmsg_temp) = ti_value;
+	MSSG_Interact_Pos(tmsg_temp) = tv_pos;
+	
+	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_INTERACT);
+	@m(tmod_world_msg) MSSG_Push(tmsg_temp, MSSG_AddEOF );	
+}
+
+//
+//function void EVENT_Interact_Vehicule_Add(int ti_position, int ti_value, vector tv_pos)
+//{
+//	modifier		tmod_world_msg;
+//	message		tmsg_temp;
+//
+//	MSSG_SetNull(tmsg_temp);
+//	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+//	
+//	MSSG_Interact_Type(tmsg_temp) = C_Interact_Vehicule;
+//	MSSG_Interact_Value(tmsg_temp) = ti_value;
+//	MSSG_Interact_PosID(tmsg_temp) = ti_position;
+//	MSSG_Interact_Pos(tmsg_temp) = tv_pos;
+//	
+//	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_INTERACT);
+//	@m(tmod_world_msg) MSSG_Push(tmsg_temp, MSSG_AddEOF );	
+//}
+
+//================================================================================================================
+// INTEREST
+//================================================================================================================
+
+//// CREE LE MESSAGE A LA FIN DE LA TRAME, POUR QU'IL SOIT DISPO LA TRAME SUIVANTE
+//// les 2 derniers paramètres sont les numéros de node dans le réseau de délocalisation.
+//// la valeur par défaut doit etre -1
+//function void EVENT_Interest_Localisation_Add(object to_target, int ti_type, vector tv_pos, float tf_pound, int ti_node, int ti_target_node)
+//{
+//	modifier		tmod_world_msg;
+//	message		tmsg_temp;
+//
+//	MSSG_SetNull(tmsg_temp);
+//	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+//	
+//	MSSG_Interest_Type(tmsg_temp) = ti_type;
+//	MSSG_Interest_Pos(tmsg_temp) = tv_pos;
+//	MSSG_Interest_Target(tmsg_temp) = to_target;
+//	MSSG_Interest_Pound(tmsg_temp) = tf_pound;
+//	MSSG_Interest_PathNode(tmsg_temp) = ti_node;
+//	MSSG_Interest_Target_PathNode(tmsg_temp) = ti_target_node;
+//	
+//	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_INTEREST);
+//	@m(tmod_world_msg) MSSG_Push(tmsg_temp, MSSG_AddEOF );		// message visible la trame suivante
+//}
+
+
+// CREE LE MESSAGE A LA FIN DE LA TRAME, POUR QU'IL SOIT DISPO LA TRAME SUIVANTE
+function void EVENT_Interest_Add(object to_target, int ti_type, vector tv_pos, float tf_pound)
+{
+	modifier		tmod_world_msg;
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_Interest_Type(tmsg_temp) = ti_type;
+	MSSG_Interest_Pos(tmsg_temp) = tv_pos;
+	MSSG_Interest_Target(tmsg_temp) = to_target;
+	MSSG_Interest_Pound(tmsg_temp) = tf_pound;
+	
+	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_INTEREST);
+	@m(tmod_world_msg) MSSG_Push(tmsg_temp, MSSG_AddEOF );		// message visible la trame suivante
+}
+
+
+//// CREE LE MESSAGE AFIN QU'IL SOIT DISPO TOUT DE SUITE (CETTE TRAME-CI)
+//// les 2 derniers paramètres sont les numéros de node dans le réseau de localisation.
+//// la valeur par défaut doit etre -1
+//function void EVENT_Interest_Localisation_Add_Now(object to_target, int ti_type, vector tv_pos, float tf_pound, int ti_node, int ti_target_node)
+//{
+//	modifier		tmod_world_msg;
+//	message		tmsg_temp;
+//
+//	MSSG_SetNull(tmsg_temp);
+//	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+//	
+//	MSSG_Interest_Type(tmsg_temp) = ti_type;
+//	MSSG_Interest_Pos(tmsg_temp) = tv_pos;
+//	MSSG_Interest_Target(tmsg_temp) = to_target;
+//	MSSG_Interest_Pound(tmsg_temp) = tf_pound;
+//	MSSG_Interest_PathNode(tmsg_temp) = ti_node;
+//	MSSG_Interest_Target_PathNode(tmsg_temp) = ti_target_node;
+//	
+//	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_INTEREST);
+//	@m(tmod_world_msg) MSSG_Push(tmsg_temp, 0 );					// message visible tout de suite pour les autres pnj de la même trame
+//}
+
+
+// CREE LE MESSAGE AFIN QU'IL SOIT DISPO TOUT DE SUITE (CETTE TRAME-CI)
+function void EVENT_Interest_Add_Now(object to_target, int ti_type, vector tv_pos, float tf_pound)
+{
+	modifier		tmod_world_msg;
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_Interest_Type(tmsg_temp) = ti_type;
+	MSSG_Interest_Pos(tmsg_temp) = tv_pos;
+	MSSG_Interest_Target(tmsg_temp) = to_target;
+	MSSG_Interest_Pound(tmsg_temp) = tf_pound;
+	
+	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_INTEREST);
+	@m(tmod_world_msg) MSSG_Push(tmsg_temp, 0 );					// message visible tout de suite pour les autres pnj de la même trame
+}
+
+

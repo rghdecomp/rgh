@@ -1,0 +1,54 @@
+// RETOURNE LA POSITION APRES X SECONDES, tv_init_speed CONTIENT LA VITESSE APRES X SECONDES
+function vector DYN_LIB_Position_After_N_Seconds(vector tv_init_pos, vector &tv_init_speed, vector tv_friction, vector tv_gravity, float tf_time, float tf_exp)
+{
+	vector	tv_A;
+	vector	tv_B;
+	vector	tv_V0;
+	vector	tv_move;
+
+	// CALCUL VITESSE 
+	tv_init_speed = MTH_VecGlobalToLocal(tv_init_speed);
+	tv_V0 = tv_init_speed;
+	tv_gravity = MTH_VecGlobalToLocal(tv_gravity);
+
+	tv_A.x = tv_gravity.x / tv_friction.x;
+	tv_A.y = tv_gravity.y / tv_friction.y;
+
+	if (tv_friction.z > 0.0 )
+		tv_A.z = tv_gravity.z / tv_friction.z;
+	else
+		tv_A.z = 0.0;
+
+	tv_B.x = (tv_A.x - tv_V0.x) * MTH_FloatExp(-tf_time * tv_friction.x);
+	tv_B.y = (tv_A.y - tv_V0.y) * MTH_FloatExp(-tf_time * tv_friction.y);
+	tv_B.z = (tv_A.z - tv_V0.z) * MTH_FloatExp(-tf_time * tv_friction.z);
+	
+	tv_init_speed = tv_A - tv_B;
+	tv_init_speed = MTH_VecLocalToGlobal(tv_init_speed);
+	
+	// CALCUL DEPLACEMENT
+	tv_move = tv_A * tf_time;
+
+	tv_move.x -= (tv_A.x - tv_V0.x) / tv_friction.x;
+	tv_move.y -= (tv_A.y - tv_V0.y) / tv_friction.y;
+	if (tv_friction.z > 0.0 )
+		tv_move.z -= (tv_A.z - tv_V0.z) / tv_friction.z;
+	else
+		tv_move.z = 0.0;
+
+	tv_move.x += tv_B.x / tv_friction.x;
+	tv_move.y += tv_B.y / tv_friction.y;
+	if (tv_friction.z > 0.0 )
+		tv_move.z += tv_B.z / tv_friction.z;
+	else
+		tv_move.z = 0.0;
+	
+	tv_move = MTH_VecLocalToGlobal(tv_move);
+	
+//	if (tv_friction.z == 0.0)
+//	{
+//		tv_move.z = tv_V0.z * tf_time;
+//		tv_move.z += 0.5 * tv_gravity.z * (tf_time * tf_time);
+//	}
+	return(tv_init_pos + tv_move);
+}

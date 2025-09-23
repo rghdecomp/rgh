@@ -1,0 +1,110 @@
+function void EVENT_L_XL_Add(int ti_type, vector tv_pos1, vector tv_pos2, modifier tm_script, modifier tmdf_MsgList)
+{
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_L_XL_Type(tmsg_temp) = ti_type;
+	MSSG_L_XL_Pos1(tmsg_temp) = tv_pos1;
+	MSSG_L_XL_Pos2(tmsg_temp) = tv_pos2;
+	MSSG_L_XL_Mdf(tmsg_temp) = tm_script;
+	
+	@m(tmdf_MsgList) MSSG_Push(tmsg_temp, MSSG_AddEOF);	
+}
+
+function void EVENT_Context_Add(int ti_model, int ti_type, vector tv_pos1, vector tv_pos2, modifier tm_script, modifier tmdf_MsgList)
+{
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_Context_Model(tmsg_temp) = ti_model;
+	MSSG_Context_Type(tmsg_temp) = ti_type;
+	MSSG_Context_Pos1(tmsg_temp) = tv_pos1;
+	MSSG_Context_Mdf(tmsg_temp) = tm_script;
+	
+	@m(tmdf_MsgList) MSSG_Push(tmsg_temp, MSSG_AddEOF);
+}
+
+function void EVENT_XS_Add(int ti_type, vector tv_pos, modifier tmdf_MsgList)
+{
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_XS_Type(tmsg_temp) = ti_type;
+	MSSG_XS_Pos(tmsg_temp) = tv_pos;
+	
+	@m(tmdf_MsgList) MSSG_Push(tmsg_temp, MSSG_AddEOF);
+}
+
+function void EVENT_Dashable_Add(vector tv_pos, modifier tmdf_MsgList)
+{
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_XS_Pos(tmsg_temp) = tv_pos;
+	
+	@m(tmdf_MsgList) MSSG_Push(tmsg_temp, MSSG_AddEOF);
+}
+
+function void EVENT_Interact_Add_Team(int ti_type, int ti_value, vector tv_pos, int ti_team)
+{
+	modifier		tmod_world_msg;
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_Interact_Type(tmsg_temp) = ti_type;
+	MSSG_Interact_Value(tmsg_temp) = ti_value;
+	MSSG_Interact_Pos(tmsg_temp) = tv_pos;
+	MSSG_Interact_Team(tmsg_temp) = ti_team;
+
+	tmod_world_msg = @o (@u o_gst_global) OBJ_MDFGet(ViD_ENGTYPE_MeSSaGe, Ci_GLOB_MSSG_ID_INTERACT);
+	@m(tmod_world_msg) MSSG_Push(tmsg_temp, MSSG_AddEOF );	
+}
+
+//	Structure pour gérer les empreintes
+STATIC_STRUCT_FOOTPRINT_MSG;
+
+function void EVENT_Footprint_Add(struct_Footprint_Msg s_Footprint, modifier tmdf_MsgList)
+{
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = s_Footprint.f_Duration;
+	
+	MSSG_Footprint_Pos(tmsg_temp) = s_Footprint.v_Pos;
+	MSSG_Footprint_Time(tmsg_temp) = s_Footprint.f_Time;
+	MSSG_Footprint_PreviousPos(tmsg_temp) = s_Footprint.v_PreviousPos;
+	MSSG_Footprint_PreviousTime(tmsg_temp) = s_Footprint.f_PreviousTime;
+	MSSG_Footprint_ZoneID(tmsg_temp) = s_Footprint.i_TerritoryZoneID;
+	MSSG_Footprint_Object(tmsg_temp) = s_Footprint.o_Zone;
+	MSSG_Footprint_TRG_ID(tmsg_temp) = s_Footprint.i_TRG_ID;
+	MSSG_Footprint_TRG_OBJ_01(tmsg_temp) = s_Footprint.o_TRG_01;
+	MSSG_Footprint_TRG_OBJ_02(tmsg_temp) = s_Footprint.o_TRG_02;
+	MSSG_Footprint_Node_ID(tmsg_temp) = s_Footprint.i_Node_Id;
+
+	@m(tmdf_MsgList) MSSG_Push(tmsg_temp, MSSG_AddEOF);
+}
+
+function void EVENT_Zone_Add(int ti_type, vector tv_pos, float tf_radius, modifier tmdf_MsgList)
+{
+	modifier		tmod_world_msg;
+	message		tmsg_temp;
+
+	MSSG_SetNull(tmsg_temp);
+	MSSG_all_Duree(tmsg_temp) = Cf_Duration_Une_Trame;
+	
+	MSSG_Zone_Type(tmsg_temp) = ti_type;
+	MSSG_Zone_Pos(tmsg_temp) = tv_pos;
+	MSSG_Zone_Radius(tmsg_temp) = tf_radius;
+
+	@m(tmdf_MsgList) MSSG_Push(tmsg_temp, MSSG_AddEOF );	
+}

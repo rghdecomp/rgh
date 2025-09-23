@@ -1,0 +1,22 @@
+
+#include "Root\04 Technical\Scripts\Include_All_Headers.h"
+
+//function int Gam_Character_MainActor_IsInFPS()
+//{
+//	modifier	tm_Ai;
+//	int			ti_return;
+//	
+//	tm_Ai = @o(SCR_MainActorGet(0)) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, 0);
+//	ti_return = @m(tm_Ai) Character_IsInFPS();
+//	return ti_return;
+//}
+//
+//function int Gam_Character_MainActor_IsInCheat()
+//{
+//	modifier	tm_Ai;
+//	int			ti_return;
+//	
+//	tm_Ai = @o(SCR_MainActorGet(0)) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, 0);
+//	ti_return = @m(tm_Ai) Character_IsInCheat();
+//	return ti_return;
+//}

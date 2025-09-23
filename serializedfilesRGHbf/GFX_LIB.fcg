@@ -1,0 +1,56 @@
+//-------------------------------------------------------------------------------------------------------
+// Set rotation and banking to the modifier
+function void GFX_SetRotBanking(modifier &tm_mod, vector tv_sight, vector tv_banking)
+{
+	@o(@m(tm_mod) MDF_OwnerGet()) OBJ_SightSet(tv_sight, tv_banking);
+}
+
+//-------------------------------------------------------------------------------------------------------
+// Get the rotation of the modifier
+function vector GFX_GetRot(modifier &tm_mod)
+{
+	return @o(@m(tm_mod) MDF_OwnerGet()) OBJ_SightGet();
+}
+
+//-------------------------------------------------------------------------------------------------------
+// Get the banking of the modifier
+function vector GFX_GetBanking(modifier &tm_mod)
+{
+	return @o(@m(tm_mod) MDF_OwnerGet()) OBJ_BankingGet();
+}
+
+//-------------------------------------------------------------------------------------------------------
+// Set the position of the modifier
+function void GFX_SetPosition(modifier &tm_mod, vector tv_pos)
+{
+	@o(@m(tm_mod) MDF_OwnerGet()) OBJ_PosSet(tv_pos);
+}
+
+//-------------------------------------------------------------------------------------------------------
+// Get the position of the modifier
+function vector GFX_GetPosition(modifier &tm_mod)
+{
+	return @o(@m(tm_mod) MDF_OwnerGet()) OBJ_PosGet();
+}
+
+//-------------------------------------------------------------------------------------------------------
+// Set the position, the rotation and the banking of the modifier
+function void GFX_SetXForm(modifier &tm_mod, vector tv_pos, vector tv_sight, vector tv_banking)
+{
+	GFX_SetPosition(tm_mod,tv_pos);
+	GFX_SetRotBanking(tm_mod, tv_sight, tv_banking);
+}
+
+//-------------------------------------------------------------------------------------------------------
+// Set the color of the modifier
+function void GFX_SetColor(modifier &tm_mod, color tc_color)
+{
+	switch (@m(tm_mod) MDF_GetType())
+	{
+		case GFX_Type_PARticle:
+			//@m(tm_mod) MDF_Seti(PAR_IFV_I_PhaseColorMin, PAR_IFV_Phase0, 5.2); 
+			break;
+		case GFX_Type_EFFect:
+			break;
+	}
+}

@@ -1,0 +1,1255 @@
+//extern function object NC_NoxGet();
+//extern function public int GST_Inventaire_ItemAdd(int ti_persoID, int ti_itemID, int ti_count);
+//extern function public int GST_Inventaire_ItemGet(int ti_persoID, int ti_itemID);
+//extern function public int GST_Inventaire_ItemRemove(int ti_persoID, int ti_itemID, int ti_count);
+//extern function public int GST_Inventaire_ItemCurrentGet(int ti_joy_btn);
+//extern function virtual public vector Actor_LibSpeedGet();
+
+
+function public int ITEM_TypeTest(int ti_itemID, int ti_type)
+{
+	if (ti_itemID > Ci_itemID_Max)
+		return 0;
+		
+	return @u ai_items_descr[ti_itemID].flags & ti_type;
+}
+
+
+/*
+// Retourne le nb de liens d'un node donné
+function int NET_LinkCountGet(int ti_node_ref, network tnet_reseau)
+{
+	int		ti_cpt = 0;
+	int		ti_node;
+	
+	ti_node = @m(tnet_reseau) NET_NextRank(ti_node_ref, ti_cpt);
+	while( ti_node != -1 )
+	{
+		ti_cpt++;
+		ti_node = @m(tnet_reseau) NET_NextRank(ti_node_ref, ti_cpt);
+	}
+	return ti_cpt;
+}
+*/
+
+// CHEATS ################################
+
+function int Cheat_CheatPageGet()
+{
+	return @u i_CheatPage;
+}
+
+function int Cheat_CheatPageBitFieldGet()
+{
+	return @u i_CheatPage_BitField;
+}
+
+// retourne vrai si c'est la bonne page de cheat et que le bit est activé
+function int Cheat_CheatPageAndBitTest(int ti_page, int ti_bit)
+{
+	if( Cheat_CheatPageGet() == ti_page && ( Cheat_CheatPageBitFieldGet() & ti_bit ) )
+		return true;
+	else
+		return false;
+}
+
+
+// MAPS ##################################
+
+// recherche dans la liste des map l'entrée qui correspond a la clef du WOL passé en Param
+function int Map_SearchByKey(int MAP_KEY)
+{
+	int		ti_loop;
+	for (ti_loop = 0; ti_loop < @u MAP_Counter; ti_loop++)
+	{
+		if (@u MAP[ti_loop].m_Key == MAP_KEY)
+			return ti_loop;
+	}
+	return -1;		
+}
+
+// recherche dans la liste des map l'entrée qui correspond a l'ID de la map
+function int Map_SearchByID(int MAP_ID)
+{
+	int		ti_loop;
+	for (ti_loop = 0; ti_loop < @u MAP_Counter; ti_loop++)
+	{
+		if (@u MAP[ti_loop].m_ID == MAP_ID)
+			return ti_loop;
+	}
+	return -1;
+}
+
+
+//#define Ci_Mission_Start		20
+//#define Ci_Mission_Nbr		50
+
+
+
+
+// Charge la map precisé soit par son n° soit par sa Clef.
+function void Map_Load(int MAP_ID, int MAP_KEY, int MAP_FLAGS)
+{
+	if (MAP_ID != -1)
+		@u UNIV_LoadMap = MAP_ID;
+	else if (MAP_KEY != -1)
+		@u UNIV_LoadMap = Map_SearchByKey(MAP_KEY);
+	@u UNIV_LoadMapFlags = MAP_FLAGS;
+
+}		
+
+
+// Charge la map precisé soit par son n° soit par sa Clef.
+function void Map_Load_ES(int MAP_ID, int MAP_KEY, int MAP_FLAGS, int ES_ID)
+{
+	Map_Load(MAP_ID, MAP_KEY, MAP_FLAGS);
+	@u UNIV_LoadMapES = ES_ID;
+}	
+
+function void Map_Load_ES_Mask(int MAP_ID, int MAP_KEY, int MAP_FLAGS, int ES_ID, int *ES_Tab)
+{
+	int ti_i;
+	Map_Load(MAP_ID, MAP_KEY, MAP_FLAGS);
+	@u UNIV_LoadMapES = ES_ID;
+	for ( ti_i = 0; ti_i < 100; ti_i++)
+		@u ai_LoadMapMask[ti_i] = ES_Tab[ti_i];
+}	
+
+function void Map_Load_Mask_Reset( int _ti_ResetValue = true )
+{
+	int ti_i;
+	for ( ti_i = 0; ti_i < 200; ti_i++)
+		@u ai_LoadMapMask[ti_i] = _ti_ResetValue;
+}	
+
+function void Map_Load_Mask_Set( int _ti_Mask ,int _ti_MaskValue )
+{
+	@u ai_LoadMapMask[_ti_Mask] = _ti_MaskValue;
+}
+
+
+function void Map_Load_MaskCusto_Update()
+{
+	Map_Load_Mask_Reset(false);
+
+	// Filter jpeg bank
+	Map_Load_Mask_Set(Ci_LoadMapMask_JpegBank1, true);
+	Map_Load_Mask_Set(Ci_LoadMapMask_JpegBank2, true);
+	
+	// Filter custo coiffure
+	int ti_i;
+	for ( ti_i=0; ti_i<3; ti_i++ )
+	{
+		if( @u s_CustoStructure[ti_i].num_coiffure > 0 )
+		{
+			Map_Load_Mask_Set(Ci_LoadMapMask_CoiffureBank1 + @u ai_CoifCorrespondance[@u s_CustoStructure[ti_i].num_coiffure], true );
+		}
+	}
+}	
+
+// Defini Map par Map
+function void Map_Define(int MAP_ID, int MAP_KEY_COLLECTE, int MAP_KEY_TIME_ATATCK, wstring MAP_Name, int MAP_Entrance)
+{
+	@u MAP[@u MAP_Counter].m_ID = MAP_ID;
+	@u MAP[@u MAP_Counter].m_Key = MAP_KEY_COLLECTE;
+	@u MAP[@u MAP_Counter].m_Key_TimeAttack = MAP_KEY_TIME_ATATCK;
+	@u MAP[@u MAP_Counter].m_Name = MAP_Name;
+	@u MAP[@u MAP_Counter].m_Entrance = MAP_Entrance;
+	@u MAP[@u MAP_Counter].m_Flags = 7 << C_HUB_DOMES_DECAL;		// => les flags sont desormais utilises pour stocker les hubs, les XS et l etat de la map (fini ou non)
+
+	@u MAP_SAVED[@u MAP_Counter].m_finished = false;
+
+	@u MAP_Counter_Displayed++;
+	@u MAP_Counter++;
+}
+
+function void Bink_Define(int MAP_ID, int ENTER_BINK_KEY, int EXIT_BINK_KEY, int BINK_FLAGS)
+{
+	@u BINK[@u BINK_Counter].m_ID = MAP_ID;
+	@u BINK[@u BINK_Counter].m_Enter_Bink_Key = ENTER_BINK_KEY;
+	@u BINK[@u BINK_Counter].m_Exit_Bink_Key = EXIT_BINK_KEY;
+	@u BINK[@u BINK_Counter].m_Flags = BINK_FLAGS;
+
+	@u BINK_Counter++;
+}
+
+function void Map_DefinePlus(int MAP_ID, int MAP_KEY_COLLECTE, int MAP_KEY_TIMEATTACK, wstring MAP_Name, int MAP_Entrance, int MAP_XSDeblok, int ENTER_BINK_KEY, int EXIT_BINK_KEY, int BINK_FLAGS)
+{
+
+	Map_Define(MAP_ID, MAP_KEY_COLLECTE, MAP_KEY_TIMEATTACK, MAP_Name, MAP_Entrance);
+	Bink_Define(MAP_ID, ENTER_BINK_KEY, EXIT_BINK_KEY, BINK_FLAGS);
+
+	if (MAP_XSDeblok == -1)
+		@u MAP[@u MAP_Counter-1].m_Flags = 7 << C_HUB_DOMES_DECAL;
+	else
+		@u MAP[@u MAP_Counter-1].m_Flags = MAP_XSDeblok;
+}
+
+function int Bink_SearchByID(int MAP_ID)
+{
+	int		ti_loop;
+	for (ti_loop = 0; ti_loop < @u BINK_Counter; ti_loop++)
+	{
+		if (@u BINK[ti_loop].m_ID == MAP_ID)
+			return ti_loop;
+	}
+	return -1;
+}
+
+function int Bink_GetEnterBinkKey(int BINK_ID)
+{
+	return @u BINK[BINK_ID].m_Enter_Bink_Key;
+}
+
+function int Bink_GetExitBinkKey(int BINK_ID)
+{
+	return @u BINK[BINK_ID].m_Exit_Bink_Key;
+}
+
+function int Bink_GetBinkFlags(int BINK_ID)
+{
+	return @u BINK[BINK_ID].m_Flags;
+}
+
+function void Map_Load_WithBink(int MAP_ID, int BINK_ID = -1, int MAP_FLAGS = 0)
+{
+	int ti_ExitBinkID;
+	
+	// Violent sinon dans le bink suivant certains son restent.
+	SND_StopAll();
+
+
+	if ( @u UNIV_LoadMap == -1 )
+	{
+		@u i_Univ_binkToPlay[0] = -1;
+		@u i_Univ_binkToPlay[1] = -1;
+		@u i_Bink_AutoSkip = false;
+		@u i_NoPadTRC = true;	//	pas de message TRC de déco de pad avant le bink
+		
+		if( BINK_ID != -1 )
+		{
+			@u i_Univ_binkToPlay[0] = BINK_ID;
+		}
+		else
+		{
+			if (@u UNIV_LoadMapOld == MAP_ID_B1 && MAP_ID == @u i_universeDefaultMapLoad)
+				ti_ExitBinkID = Bink_SearchByID(MAP_ID_B7); // On charge l'autre Bink, avec la nacelle mais SANS l'arrivée au tas
+			else
+				ti_ExitBinkID = Bink_SearchByID(@u UNIV_LoadMapOld);
+			if ( ti_ExitBinkID != -1 )
+			{
+				int ti_ExitBinkKey = Bink_GetExitBinkKey(ti_ExitBinkID);
+				int ti_ExitBinkFlags	= Bink_GetBinkFlags(ti_ExitBinkID);
+				if ( ti_ExitBinkKey != -1 )
+				{
+					if( (ti_ExitBinkFlags & Ci_Bink_Play_Exit_Check) != 0 )
+					{
+						if( @u i_Univ_binkCheck[0] )
+						{
+							@u i_Univ_binkToPlay[0] = ti_ExitBinkKey;
+						}
+					}
+					else
+					{
+						@u i_Univ_binkToPlay[0] = ti_ExitBinkKey;
+					}
+				}
+			}
+			
+			int ti_EnterBinkID = Bink_SearchByID( MAP_ID );
+			if ( ti_EnterBinkID != -1 )
+			{
+				int ti_EnterBinkKey = Bink_GetEnterBinkKey(ti_EnterBinkID);
+				int ti_EntrBinkFlags	= Bink_GetBinkFlags(ti_EnterBinkID);
+				if ( ti_EnterBinkKey != -1 )
+				{
+					if( (ti_EntrBinkFlags & Ci_Bink_Play_Auto_Skip) != 0 )
+					{
+						@u	i_Bink_AutoSkip = true;
+					}
+				
+					if( (ti_EntrBinkFlags & Ci_Bink_Play_If_None) != 0 && 
+						@u i_Univ_binkToPlay[0] != -1 )
+					{
+						@u i_Univ_binkToPlay[1] = -1;
+					}
+					else
+					{
+						if( (ti_EntrBinkFlags & Ci_Bink_Play_Enter_Check) != 0 )
+						{
+							if( @u i_Univ_binkCheck[1] )
+							{
+								@u i_Univ_binkToPlay[1] = ti_EnterBinkKey;
+							}
+						}
+						else
+						{
+							@u i_Univ_binkToPlay[1] = ti_EnterBinkKey;
+						}
+					}
+				}
+			}
+		}
+		
+		@u i_Univ_binkCheck[0] = false;
+		@u i_Univ_binkCheck[1] = false;
+		
+		if( @u i_Univ_binkToPlay[0] == -1 )
+		{
+			@u i_Univ_binkToPlay[0] = @u i_Univ_binkToPlay[1];
+			@u i_Univ_binkToPlay[1] = -1;
+		}
+		
+		if( @u i_Univ_binkToPlay[0] == -1 )
+		{	
+			Map_Load(MAP_ID, -1, MAP_FLAGS);
+		}
+		else
+		{
+			@u i_Univ_mapToLoad = MAP_ID;
+			@u UNIV_LoadMap = -1;
+			@u UNIV_LoadMapFlags = MAP_FLAGS;
+		}
+	}
+}		
+
+// Charge la map precisé soit par son n° soit par sa Clef.
+function void Map_Load_ES_WithBink(int MAP_ID, int ES_ID, int BINK_ID, int MAP_FLAGS = 0)
+{
+	Map_Load_WithBink(MAP_ID, BINK_ID, MAP_FLAGS);
+	@u UNIV_LoadMapES = ES_ID;
+}	
+
+
+// GAMES #################################
+
+function int Game_MissionCine_IsPlaying()
+{
+	int	ti_loop;
+	
+	for (ti_loop = 0; ti_loop < Ci_Mission_Nbr; ti_loop++)
+	{
+		if (@u i_mission_CineDeb[ti_loop] == Ci_MissionCine_Run)
+			return true;
+		if (@u i_mission_CineFin[ti_loop] == Ci_MissionCine_Run)
+			return true;
+	}
+	return false;
+}
+
+
+function int Game_MissionCineDeb_IsFinished(int ti_Mission)
+{
+	
+	if (@u i_mission_CineDeb[ti_Mission] == Ci_MissionCine_Finished)
+		return true;
+	return false;
+}
+
+function int Game_MissionCineFin_IsFinished(int ti_Mission)
+{
+	if (@u i_mission_CineFin[ti_Mission] == Ci_MissionCine_Finished)
+		return true;
+	return false;
+}
+
+function void Game_MissionCineDeb_Finished(int ti_Mission)
+{
+	@u i_mission_CineDeb[ti_Mission] = Ci_MissionCine_Finished;
+}
+
+function void Game_MissionCineFin_Finished(int ti_Mission)
+{
+	@u i_mission_CineFin[ti_Mission] = Ci_MissionCine_Finished;
+}
+
+function int Game_MissionCineDeb_WantToRun(int ti_Mission)
+{
+	if (@u i_mission_CineDeb[ti_Mission] == Ci_MissionCine_Run)
+		return true;
+	return false;
+}
+
+function int Game_MissionCineFin_WantToRun(int ti_Mission)
+{
+	if (@u i_mission_CineFin[ti_Mission] == Ci_MissionCine_Run)
+		return true;
+	return false;
+}
+
+
+function void Game_MissionCineFin_Run(int ti_Mission)
+{
+	@u i_mission_CineFin[ti_Mission] = Ci_MissionCine_Run;
+}
+
+
+// Retourne si telle mission est completed ou pas...
+function int Game_MissionIsCompleted(int ti_Mission)
+{
+	if (@u i_mission_flags[ti_Mission] & Ci_MissionFlags_Completed)
+		return true;
+	return false;
+}
+
+
+// Reset la missions courante
+function void Game_MissionReset(int ti_flags)
+{
+	if (@u i_mission_current >= 0 && ti_flags & Ci_MissionFlags_ResetStep)
+		@u i_mission_step[@u i_mission_current] = 0;
+	@u i_mission_old = @u i_mission_current;
+	@u i_mission_current = -1;
+}
+
+
+// Retourne la mission courante
+function int Game_MissionGet()
+{
+	return (@u i_mission_current);
+}
+
+
+// Retourne si telle mission est active ou pas.
+function int Game_MissionIsActive(int ti_Mission)
+{
+	if (@u i_mission_current == ti_Mission)
+		return true;
+	return false;
+}
+
+
+// Retourne l'etape dans telle mission.
+function int Game_MissionStepGet(int ti_Mission)
+{
+	if (ti_Mission >=0)
+		return @u i_mission_step[ti_Mission];
+	else
+		return -1;
+	
+}
+
+
+function int Game_MissionFlagsGet(int ti_Mission)
+{
+	return @u i_mission_flags[ti_Mission];
+}
+
+
+function int Game_MissionFlags_IsCompleted(int ti_Mission)
+{
+	return @u i_mission_flags[ti_Mission] & Ci_MissionFlags_Completed;
+}
+
+
+function int Game_MissionFlags_IsAccessible(int ti_Mission)
+{
+	if (Game_MissionGet() == -1)
+	{	if (Game_MissionIsCompleted(ti_Mission))
+			return false;
+		else
+			return @u i_mission_flags[ti_Mission] & Ci_MissionFlags_Accessible;
+	}
+	else
+		return false;
+}
+
+
+function void Game_MissionFlags_CompletedSet(int ti_Mission)
+{
+	if (ti_Mission >= 0)
+		@u i_mission_flags[ti_Mission] |= Ci_MissionFlags_Completed;
+}
+
+
+// Fixe l'etape dans telle mission.
+function void Game_MissionStepSet(int ti_Mission, int ti_value)
+{
+	if (ti_Mission >= 0)
+		@u i_mission_step[ti_Mission] = ti_value;
+}
+
+
+// Passe a l'etape suivante dans telle mission
+function void Game_MissionStepNext(int ti_Mission)
+{
+	if (ti_Mission >= 0)
+		@u i_mission_step[ti_Mission] ++;
+}
+
+
+function void Map_LoadFilterCineFlush()
+{
+	// On load tout ce qui est avant les missions
+	int	ti_loop;
+
+	@u ai_LoadMapMaskCine_FlushFlag = false;
+
+	for (ti_loop = Ci_Mission_CineDeb; ti_loop < Ci_Mission_CineDeb+Ci_Mission_Nbr+Ci_Mission_Nbr; ti_loop++)
+		@u ai_LoadMapMask[ti_loop]= @u ai_LoadMapMaskCine[ti_loop];
+	
+}
+
+function void Map_LoadFilterCineFin()
+{
+	// On load tout ce qui est avant les missions
+	int	ti_loop;
+
+	@u ai_LoadMapMaskCine_FlushFlag = true;
+
+	for (ti_loop = Ci_Mission_CineFin; ti_loop < Ci_Mission_CineFin+Ci_Mission_Nbr; ti_loop++)
+	{
+		if (Game_MissionGet() == ti_loop-Ci_Mission_CineFin)
+			@u ai_LoadMapMaskCine[ti_loop] = true;
+		else
+			@u ai_LoadMapMaskCine[ti_loop] = false;
+	}
+}
+
+
+function void Map_LoadFilterCineDeb()
+{
+	// On load tout ce qui est avant les missions
+	int	ti_loop;
+
+	@u ai_LoadMapMaskCine_FlushFlag = true;
+
+	for (ti_loop = Ci_Mission_CineDeb; ti_loop < Ci_Mission_CineDeb+Ci_Mission_Nbr; ti_loop++)
+	{
+		if (Game_MissionFlags_IsAccessible(ti_loop-Ci_Mission_CineDeb))
+			@u ai_LoadMapMaskCine[ti_loop] = true;
+		else
+			@u ai_LoadMapMaskCine[ti_loop] = false;
+	}
+}
+
+
+function void Game_MissionFlags_AccessibleSet(int ti_Mission)
+{
+	@u i_mission_flags[ti_Mission] |= Ci_MissionFlags_Accessible;
+	@u ai_LoadMapMask[ti_Mission+Ci_Mission_CineDeb] = true;
+	Map_LoadFilterCineDeb();
+	DBG_TraceString(0,"Mission ");
+	DBG_TraceInt(0,ti_Mission);
+	DBG_TraceString(0," now accessible\n");
+}
+
+
+function void Game_MissionFlags_NotAccessibleSet(int ti_Mission)
+{
+	@u i_mission_flags[ti_Mission] &= ~Ci_MissionFlags_Accessible;
+	@u ai_LoadMapMask[ti_Mission+Ci_Mission_CineDeb] = false;
+	Map_LoadFilterCineDeb();
+}
+
+
+function void Game_MissionCineDeb_Run(int ti_Mission)
+{
+	if (ti_Mission>= 0)
+		@u i_mission_CineDeb[ti_Mission] = Ci_MissionCine_Run;
+
+}
+
+
+// Defini la mission courante
+function void Game_MissionSet(int ti_Mission, int ti_flags)
+{
+	if (@u i_mission_current >= 0 && ti_flags & Ci_MissionFlags_ResetStep)
+		@u i_mission_step[@u i_mission_current] = 0;
+
+	Game_MissionCineDeb_Run(ti_Mission);
+
+	@u i_mission_old = @u i_mission_current;
+	@u i_mission_current = ti_Mission;
+
+	Map_LoadFilterCineDeb();
+	Map_LoadFilterCineFin();
+
+	int ti_text;
+	ti_text = STR_Display_W("/F4//jxcyc/MISSION ",cvector( 0.5, 0.5, 0.0),0.1);
+	STR_InsInt(ti_text, -1, ti_Mission);
+	STR_InsText_W(ti_text, -1, " ACTIVATED\n");
+}
+
+
+// Defini les filtres par defaut
+function void Map_LoadFilterMissionNone()
+{
+	int	ti_loop;
+
+	Game_MissionSet(-1, Ci_MissionFlags_ResetStep | Ci_MissionFlags_MasterInit);
+
+	// On load tout ce qui est avant les missions
+	for (ti_loop = 0; ti_loop < Ci_Mission_Start; ti_loop++)
+		@u ai_LoadMapMask[ti_loop] = true;
+
+	// On ne load que la mission en cours...
+	for (ti_loop = Ci_Mission_Start; ti_loop < (Ci_Mission_Start+Ci_Mission_Nbr); ti_loop++)
+		@u ai_LoadMapMask[ti_loop] = false;
+
+//	Map_LoadFilterCineDeb();
+//	Map_LoadFilterCineFin();
+}
+
+
+// Defini les filtres
+function void Map_LoadFilterMissionSet(int MAP_Mission)
+{
+	int	ti_loop;
+
+	// On load tout ce qui est avant les missions
+	for (ti_loop = 0; ti_loop < Ci_Mission_Start; ti_loop++)
+		@u ai_LoadMapMask[ti_loop] = true;
+
+	// On ne load que la mission en cours...
+	for (ti_loop = Ci_Mission_Start; ti_loop < (Ci_Mission_Start+Ci_Mission_Nbr); ti_loop++)
+	{
+		if (ti_loop == (MAP_Mission+Ci_Mission_Start))
+			@u ai_LoadMapMask[ti_loop] = true;
+		else
+			@u ai_LoadMapMask[ti_loop] = false;
+	}
+
+//	Map_LoadFilterCineDeb();
+//	Map_LoadFilterCineFin();
+}
+
+
+function void Map_Init(int ti_ForceLoadIndex, int ti_ArraySize)
+{
+	int ti_i;
+	
+	for (ti_i = 0; ti_i < ti_ArraySize; ti_i++)
+	{
+		if (ti_i < ti_ForceLoadIndex)
+		{
+			//les premiers .wor ne sont pas chargés, c'est le MapLoader qui s'en chargera
+			@u ai_LoadMapMask[ti_i] = false;
+		}
+		else
+		{
+			@u ai_LoadMapMask[ti_i] = true;
+		}
+	}
+}
+
+
+// Reset toutes les mission
+function void Game_MissionInit()
+{
+	Map_LoadFilterMissionNone();
+	@u ai_LoadMapMaskCine_FlushFlag = false;
+}
+
+
+// Defini la mission courtante comme Fini(Completed) et reset la mission
+function void Game_MissionCompleted(int ti_flags)
+{
+	if (@u i_mission_current >= 0)
+	{
+		Game_MissionCineFin_Run(	@u i_mission_current );
+
+		Game_MissionFlags_CompletedSet(	@u i_mission_current );
+
+//		@u i_mission_flags[@u i_mission_current] |= Ci_MissionFlags_Completed;
+
+		int ti_text;
+		ti_text = STR_Display_W("/F4//jxcyc/MISSION ",cvector( 0.5, 0.5, 5.0),1.0);
+		STR_InsInt(ti_text, -1, @u i_mission_current);
+		STR_InsText_W(ti_text, -1, " COMPLETED\n");
+
+		Game_MissionReset(ti_flags);
+		Map_LoadFilterCineDeb();
+		Map_LoadFilterCineFin();
+	}
+}
+
+// Defini la mission courtante comme Fini(Completed) et reset la mission
+function void Game_MissionAborted(int ti_flags)
+{
+	int ti_text;
+	ti_text = STR_Display_W("/F4//jxcyc/MISSION ",cvector( 0.5, 0.5, 5.0),1.0);
+	STR_InsInt(ti_text, -1, @u i_mission_current);
+	STR_InsText_W(ti_text, -1, " ABORDED\n");
+
+	Game_MissionReset(ti_flags);
+	Map_LoadFilterCineDeb();
+	Map_LoadFilterCineFin();
+}
+
+// GAMES #################################
+
+
+
+
+// GFX ##################################
+
+function modifier GFX_Create(object to_gao, int ti_GFX_ID, vector tv_pos, int ti_flags)
+{
+	object		to_GFX;
+	modifier 	tmod_GFX;
+
+	to_GFX = @o(to_gao) OBJ_Duplicate();
+
+	if (ti_flags == GFX_Type_EFFect)
+		tmod_GFX = @o(to_GFX) OBJ_MDFGet(ViD_ENGTYPE_EFFects, ti_GFX_ID);
+	else
+		tmod_GFX = @o(to_GFX) OBJ_MDFGet(ViD_ENGTYPE_PARticule, ti_GFX_ID);
+
+	// Positionnement
+	@o(to_GFX) OBJ_PosSet(tv_pos);
+
+	// Activation du modifier
+	@o(to_GFX) OBJ_ControlApplySet(true);
+	@o(to_GFX) OBJ_ControlRenderSet(true);
+	@m(tmod_GFX) MDF_ControlApplySet(true);
+	@m(tmod_GFX) MDF_ControlRenderSet(true);
+
+	// Passage de l'ID du GFX a l'AI
+	@o(to_GFX) OBJ_CustomBitsSet(ti_GFX_ID,~ti_GFX_ID);
+
+//	Exemple de Register sur une variable Globale de type Modifier =====
+//	ViD_RegisterVariable(SCR_ObjMe(),mod_GFX,ViD_CRV_Destroy,mod_GFX);
+//	Exemple de Register sur une variable Globale de type Modifier =====
+
+	return tmod_GFX;
+}
+
+
+
+//function public int Inventaire_ItemAdd(int ti_persoID, int ti_itemID, int ti_count)
+//{
+//	return @m(@o(@u o_gst_inventaire) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, 0)) GST_Inventaire_ItemAdd(ti_persoID, ti_itemID, ti_count);
+//}
+//
+//function public int Inventaire_ItemGet(int ti_persoID, int ti_itemID)
+//{
+//	return @m(@o(@u o_gst_inventaire) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, 0)) GST_Inventaire_ItemGet(ti_persoID, ti_itemID);
+//}
+//
+//function public int Inventaire_ItemRemove(int ti_persoID, int ti_itemID, int ti_count)
+//{
+//	return @m(@o(@u o_gst_inventaire) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, 0)) GST_Inventaire_ItemRemove(ti_persoID, ti_itemID, ti_count);
+//}
+//
+//function public int Inventaire_ItemCurrentGet(int ti_joy_btn)
+//{
+//	return @m(@o(@u o_gst_inventaire) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, 0)) GST_Inventaire_ItemCurrentGet(ti_joy_btn);
+//}
+
+function float AmortiDt( float pf_coef)
+{
+	float	f_DT;
+	float	f_amorti;
+	f_DT = TIME_GetDT();
+	f_amorti = 1.0;
+	while ( f_DT >=0)
+	{
+		f_amorti *= pf_coef;
+		f_DT -= 0.016;
+	}
+	return f_amorti;
+}
+
+
+function void DBG_RenderAlignedWorldSquare(vector pv_1,vector pv_2,int pi_color)
+{
+	vector	tv_1;
+	vector	tv_2;
+	tv_1 = pv_1;
+	tv_1.x = pv_2.x;
+	tv_2 = pv_1;
+	tv_2.y = pv_2.y;
+	DBG_RenderTriangle(pv_1,tv_1,tv_2,pi_color);
+	DBG_RenderTriangle(pv_2,tv_2,tv_1,pi_color);
+}
+
+function int DBG_DisplayAnimFreq(int ti_action, float tf_meca_speed)
+{
+	int ti_str = -1;
+	if( Cheat_CheatPageGet() == Ci_CheatPage_Anim )
+	{
+		object to_gao = SCR_ObjMe();
+//		vector tv_offset = cvector(0,0.5,0.2);
+		vector tv_offset= cvector( 0.0, 0.0, 0.9);
+		tv_offset = -MTH_VecGlobalToLocal(@o(get_camera) OBJ_SightGet() * 0.3);
+		tv_offset.z += 0.5;
+		ti_str = STR_DisplayGroup_W("/jxcyc//F17//S4.0/", tv_offset, 0.0, Ci_STR_Group_DBG);
+		STR_Set3D(ti_str, to_gao, STR_F3D_LookAt + STR_F3D_PivotIsLocal);
+		STR_InsText_W(ti_str, -1, "Spd ");
+		STR_InsFloat(ti_str, -1, tf_meca_speed, 2);
+		STR_InsText_W(ti_str, -1, "   Act ");
+		STR_InsInt(ti_str, -1, ti_action);
+		STR_InsText_W(ti_str, -1, " x ");
+		modifier tmdf_ACT = @o(to_gao) OBJ_MDFGet(ViD_ENGTYPE_ACTions, 0);
+		float tf_anim_speed = @m(tmdf_ACT) ACT_MBSpeedGet(@m(tmdf_ACT) ACT_CurGet(), @m(tmdf_ACT) ACT_ItemCurGet());
+		float tf_freq_coef;
+		if( tf_anim_speed > 0.0 )
+			tf_freq_coef = tf_meca_speed / tf_anim_speed;
+		else
+			tf_freq_coef = 1.0;
+		if( tf_freq_coef > 2.0 )
+			STR_InsText_W(ti_str, -1, "/C0000FF/");
+		else if( tf_freq_coef < 0.5 )
+			STR_InsText_W(ti_str, -1, "/C00FFFF/");
+		STR_InsFloat(ti_str, -1, tf_freq_coef, 2);
+	}
+	return ti_str;
+}
+
+function int SCR_IsOnScreen(object to_gao, int ti_viewport)
+{
+	vector tv_BV_Min_2D = Cv_NullVector;
+	vector tv_BV_Max_2D = Cv_NullVector;
+	if( @o(to_gao) OBJ_BVView3Dto2DRect(ti_viewport, tv_BV_Min_2D, tv_BV_Max_2D) )
+		return true;
+	return false;
+}
+
+function object OBJ_KindOfInBV(object to_bv, object to_search)
+{
+	int ti_i;
+	object tao_obj[30];
+	int ti_nb = MDF_ZDE(to_bv) ZDE_ZdePosGetAllOverlaps(&tao_obj[0],30,2);
+	int ti_kind = MDF_Script(to_search) SCR_ModelKeyGet();
+	modifier	tmdf_SCR = SCR_CO_MdfNull;
+	for(ti_i=0;ti_i<ti_nb;ti_i++)
+	{
+		tmdf_SCR = @o(tao_obj[ti_i]) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, 0);
+		if( tmdf_SCR )
+			if( @m(tmdf_SCR) SCR_ModelKeyGet()==ti_kind)
+				return tao_obj[ti_i];
+	}
+	return SCR_CO_ObjNull;
+}
+
+// récupère les modifier script de l'objet spécifié et retourne le ti_rank ième correspondant au path AI indiqué
+function modifier SCR_PathRankMdfGet(object to_gao, model tstr_path, int ti_rank)
+{
+	int ti_i = 0;
+	int ti_cpt = 0;
+	modifier tmdf_SCR = @o(to_gao) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, ti_i);
+	while( tmdf_SCR ) 
+	{
+		if( @m(tmdf_SCR) SCR_IsModel(tstr_path) )
+		{
+			if( ti_cpt == ti_rank )
+				return tmdf_SCR;
+			else
+				ti_cpt++;
+		}
+		ti_i++;
+		tmdf_SCR = @o(to_gao) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, ti_i);
+	}
+	return SCR_CO_MdfNull;
+}
+
+// récupère les modifier script de l'objet spécifié et retourne le 1er correspondant au path AI indiqué
+function modifier SCR_PathMdfGet(object to_gao, model tstr_path)
+{
+	return SCR_PathRankMdfGet(to_gao, tstr_path, 0);
+}
+
+
+// flash le modifier ACT si ça n'a pas déjà été fait cette trame-ci
+function int ACT_FlashOnce(modifier tmdf_act)
+{
+	if( ! @m(tmdf_act) ACT_CurAnimIsFlashed() )
+	{
+		@m(tmdf_act) ACT_FlashAnim();
+		return true;
+	}
+	return false;
+}
+
+
+function void SKL_Init(modifier tmdf_SKL)
+{
+	object	to_bone;
+	int		ti_i;
+//	int		ti_k;
+//	modifier tmdf_vis;
+	for( ti_i = 0; ti_i < 255; ti_i++ )
+	{
+		to_bone = @m(tmdf_SKL) SKL_ObjGetByChannel(ti_i);
+		if( to_bone )
+		{
+			@o(to_bone) OBJ_CustomBitsSet(CBits_Actor_IsBONE, none);
+//			for( ti_k = 0; ti_k < 3; ti_k++ )
+//			{
+//				tmdf_vis = @o(to_bone) OBJ_MDFGet(ViD_ENGTYPE_VISual, ti_k);
+//				if( tmdf_vis && ( @m(tmdf_vis ) VIS_DrawMaskGet() & 1 ) )
+//				{
+//					@m(tmdf_vis) MDF_ControlApplySet(true);
+//					@m(tmdf_vis) MDF_ControlRenderSet(true);
+//				}
+//			}
+		}
+	}
+}
+
+
+// ENREGISTRE UNE CALLBACK DE LoadError
+function int CB_LoadError_Register(modifier tmdf_target, signal ts_callback)
+{
+	return @m(tmdf_target) SCR_CBAdd(SCR_CCB_LoadError, ts_callback);
+}
+
+// ANNULE UNE CALLBACK DE LoadError
+function void CB_LoadError_Unregister(modifier tmdf_target, int ti_id)
+{
+	@m(tmdf_target) SCR_CBDel(ti_id);
+}
+
+// ENVOIE UN LoadError
+function export int CB_LoadError_Send(modifier tmdf_target,	int ti_type)
+{
+	stock stk_params;
+
+	stk_params.i32_1 = ti_type;
+	
+	SCR_CBCall(tmdf_target, SCR_CCB_LoadError, stk_params);
+
+	return stk_params.i32_2;
+}
+
+
+
+// ENREGISTRE UNE CALLBACK DE PAF
+function int CB_Paf_Register(modifier tmdf_target, signal ts_callback)
+{
+#ifndef _FINAL_
+	DBG_Assert(tmdf_target, "[CB_Paf_Register failure] Modifier is null");
+#endif
+	return @m(tmdf_target) SCR_CBAdd(SCR_CCB_Paf, ts_callback);
+}
+
+
+// ANNULE UNE CALLBACK DE PAF
+function void CB_Paf_Unregister(modifier tmdf_target, int ti_id)
+{
+#ifndef _FINAL_
+	DBG_Assert(tmdf_target, "[CB_Paf_Unregister failure] Modifier is null");
+#endif
+	@m(tmdf_target) SCR_CBDel(ti_id);
+}
+
+// ENVOIE UN PAF
+function export int CB_Paf_Send(modifier tmdf_target,
+								int ti_type,
+								vector tv_dir,
+								float tf_damage,
+								object to_sender,
+								int ti_senderType)
+{
+	stock stk_params;
+	
+#ifndef _FINAL_
+	DBG_Assert(tmdf_target, "[CB_Paf_Send failure] Modifier is null");
+#endif
+	
+	CB_Paf_Target(stk_params) = tmdf_target;
+	CB_Paf_Type(stk_params) = ti_type;
+	CB_Paf_Dir(stk_params) = tv_dir;
+	CB_Paf_Damage(stk_params) = tf_damage;
+	CB_Paf_Sender(stk_params) = to_sender;
+	CB_Paf_SenderType(stk_params) = ti_senderType;
+	
+	// Par défaut le paf n'est pas pris
+	CB_Paf_ReturnValue(stk_params) = 0;
+	
+	SCR_CBCall(tmdf_target, SCR_CCB_Paf, stk_params);
+
+	return CB_Paf_ReturnValue(stk_params);
+}
+
+
+
+
+// ENREGISTRE UNE CALLBACK D ACTIVATION
+function int CB_Activate_Register(modifier tmdf_target, signal ts_callback)
+{
+#ifndef _FINAL_
+	DBG_Assert(tmdf_target, "[CB_Activate_Register failure] Modifier is null");
+#endif
+	return @m(tmdf_target) SCR_CBAdd(SCR_CCB_Activate, ts_callback);
+}
+
+// ANNULE UNE CALLBACK D ACTIVATION
+function void CB_Activate_Unregister(modifier tmdf_target, int ti_id)
+{
+#ifndef _FINAL_
+	DBG_Assert(tmdf_target, "[CB_Activate_Unregister failure] Modifier is null");
+#endif
+	@m(tmdf_target) SCR_CBDel(ti_id);
+}
+
+// ACTIVE UN MECANISME
+function export void CB_Activate_Send(modifier tmdf_target,int ti_type, object to_sender)
+{
+	stock stk_params;
+	
+#ifndef _FINAL_
+	DBG_Assert(tmdf_target, "[CB_Activate_Send failure] Modifier is null");
+#endif 
+	
+	CB_Activate_Target(stk_params) = tmdf_target;
+	CB_Activate_Type(stk_params) = ti_type;	
+	CB_Activate_Sender(stk_params) = to_sender;
+	SCR_CBCall(tmdf_target, SCR_CCB_Activate, stk_params);
+}
+
+// ENREGISTRE UNE CALLBACK DE CINE
+function int OBJ_Cine_PauseRegister(signal ts_callback)
+{
+	return @m(@u mdf_gst_global_script) SCR_CBAdd(SCR_CCB_Paf, ts_callback);
+}
+
+// ANNULE UNE CALLBACK DE CINE
+function void OBJ_Cine_PauseUnregister(int ti_id)
+{
+	@m(@u mdf_gst_global_script) SCR_CBDel(ti_id);
+}
+
+
+
+// ENREGISTRE UNE CALLBACK DE PAF
+function int OBJ_Paf_Register(object ULTRA_target,signal ts_callback)
+{
+	@o(ULTRA_target) OBJ_CustomBitsSet(OBJ_CBits_Paffable ,none);
+	return @m(@o(ULTRA_target) OBJ_MdfByRankGet(0)) SCR_CBAdd(SCR_CCB_Paf, ts_callback);
+}
+
+// ANNULE UNE CALLBACK DE PAF
+function void OBJ_Paf_Unregister(object ULTRA_target, int ti_id)
+{
+	@o(ULTRA_target) OBJ_CustomBitsSet(none, OBJ_CBits_Paffable);
+	@m(@o(ULTRA_target) OBJ_MdfByRankGet(0)) SCR_CBDel(ti_id);
+}
+
+// ENVOIE UN PAF
+function int OBJ_Paf_Send(object ULTRA_target, 
+								modifier tmdf_target,
+								int ti_type,
+								vector tv_dir,
+								float tf_damage,
+								object to_sender,
+								int ti_senderType)
+{
+	if(	@o(ULTRA_target) OBJ_CustomBitsTest(OBJ_CBits_Paffable))
+	{
+		stock stk_params;
+	
+		CB_Paf_Target(stk_params) = tmdf_target;
+		CB_Paf_Type(stk_params) = ti_type;
+		CB_Paf_Dir(stk_params) = tv_dir;
+		CB_Paf_Damage(stk_params) = tf_damage;
+		CB_Paf_Sender(stk_params) = to_sender;
+		CB_Paf_SenderType(stk_params) = ti_senderType;
+		
+		SCR_CBCall(@o(ULTRA_target) OBJ_MdfByRankGet(0), SCR_CCB_Paf, stk_params);
+		return true;
+	}
+	return false;
+	
+}
+
+function inline int Univers_GetMapXsToDeblock(int _mapID)
+{
+	return ((@u MAP[_mapID].m_Flags & C_UNIVERS_XS_DEBLOQ_MASK) >> C_UNIVERS_XS_DEBLOQ_DECAL);
+}
+
+function inline void Univers_SetMapXsToDeblock(int _mapID,int _value)
+{
+	@u MAP[_mapID].m_Flags = @u MAP[_mapID].m_Flags - (@u MAP[_mapID].m_Flags & C_UNIVERS_XS_DEBLOQ_MASK) + (_value << C_UNIVERS_XS_DEBLOQ_DECAL);
+}
+
+function inline int Univers_GetMapFinished(int _mapID)
+{
+	return @u MAP_SAVED[_mapID].m_finished;
+}
+
+function inline void Univers_SetMapFinished(int _mapID,int _state)
+{
+	@u MAP_SAVED[_mapID].m_finished = _state;
+}
+
+function inline int Univers_GetDomeID(int _mapID)
+{
+	return ((@u MAP[_mapID].m_Flags & C_HUB_DOMES_MASK) >> C_HUB_DOMES_DECAL);
+}
+
+function inline void Univers_SetDomeID(int _mapID,int _domeID)
+{
+	@u MAP[_mapID].m_Flags = @u MAP[_mapID].m_Flags - (@u MAP[_mapID].m_Flags & C_HUB_DOMES_MASK) + (_domeID << C_HUB_DOMES_DECAL);
+}
+
+function inline int Univers_GetValidationDome(int _mapID)
+{
+	return ((@u MAP[_mapID].m_Flags & VALIDATION_DOMES_MASK) >> VALIDATION_DOMES_DECAL) - 1;
+}
+
+//------------------------------------------------------------
+//		MAP STATE (blocked / unlocked / finished)
+//------------------------------------------------------------
+function int Univers_GetMapState(int _mapID)
+{
+	int cpt;
+	int state = C_MAP_STATE_BLOCKED;
+
+	for (cpt = 0; cpt < 100; cpt++)
+	{
+		if (@u MAP[cpt].m_ID == _mapID)
+		{
+			if (@u i_collecte_StackToTheMoon >= Univers_GetMapXsToDeblock(cpt))
+			{
+				if (Univers_GetMapFinished(cpt))
+					state = C_MAP_STATE_FINISHED;
+				else
+					state = C_MAP_STATE_UNLOCKED;
+			}
+			break;
+		}
+	}
+
+	return state;
+}
+
+//------------------------------------------------------------
+//					MAP FINISHED CALL
+//------------------------------------------------------------
+function void Map_CurrentFinished()
+{
+	int cpt;
+
+	for (cpt = 0; cpt < 100; cpt++)
+	{
+		if (@u MAP[cpt].m_ID == @u UNIV_LoadMapOld)
+		{
+			Univers_SetMapFinished(cpt,true);
+			break;
+		}
+	}
+}
+
+//------------------------------------------------------------
+//					MAP FINISHED CALL
+//------------------------------------------------------------
+function int Map_GetNextInHub(int &_rank,int _hubID)
+{
+	int cpt;
+	int mapID = -1;
+
+	for (cpt = _rank; cpt < 100; cpt++)
+	{
+		if ((Univers_GetDomeID(cpt) == _hubID) && @u MAP[cpt].m_ID)
+		{
+			mapID = @u MAP[cpt].m_ID;
+			_rank = cpt+1;
+			break;
+		}
+	}
+
+	return mapID;
+}
+
+//------------------------------------------------------------
+//					UNLOCK DOME
+//------------------------------------------------------------
+function void Univers_ValidateDome(int _domeID, int _launchHub)
+{
+	if ((_domeID >= 0) && (_domeID < C_HUB_NB_DOMES))
+	{
+		@u i_universeValidatedDomes[_domeID] = true;
+		if (_launchHub)
+		{
+			@u i_universeJustValidated = true;
+			@u i_universeCurrentDome = _domeID;
+		}
+	}
+	else
+		DBG_Error("Non mais tu me prends pour un jambon ou quoi ? Corrige moi tout de suite cet ID de dome ou je lache les chiens");
+}
+
+//------------------------------------------------------------
+//					SET CURRENT DOME
+//------------------------------------------------------------
+function void Univers_SetCurrentDome(int _domeID)
+{
+	if ((_domeID >= 0) && (_domeID < C_HUB_NB_DOMES))
+		@u i_universeCurrentDome = _domeID;
+	else
+		DBG_Error("Non mais tu me prends pour un jambon ou quoi ? Corrige moi tout de suite cet ID de dome ou je lache les chiens");
+}
+
+//------------------------------------------------------------
+//					SET WANTED DOME
+//------------------------------------------------------------
+function void Univers_SetWantedDome(int _domeID)
+{
+	if ((_domeID >= 0) && (_domeID < C_HUB_NB_DOMES))
+		@u i_universeWantedDome = _domeID;
+	else
+		DBG_Error("Non mais tu me prends pour un jambon ou quoi ? Corrige moi tout de suite cet ID de dome ou je lache les chiens");
+}
+
+//------------------------------------------------------------
+//					SET MAP FLAG
+//------------------------------------------------------------
+function void Univers_SetMapFlag(int _flag)
+{
+	@u i_universeMapFlag = _flag;
+}
+
+//------------------------------------------------------------
+//					LOAD HUB
+//------------------------------------------------------------
+function int Univers_HubIdGet()
+{
+	int mapID;
+	
+	if (@u i_universeValidatedDomes[C_HUB_DOME_6])
+	{
+		// HUB Layer 3
+		mapID = MAP_ID_HUB_BALTI_L3_XS ;
+	}
+	else
+	{
+		if (@u i_universeValidatedDomes[C_HUB_DOME_3])
+		{
+			// HUB Layer 2
+			mapID = MAP_ID_HUB_BALTI_L2;
+		}
+		else
+		{
+			// HUB Layer 1
+			mapID = MAP_ID_HUB_BALTI_L1;
+		}
+	}
+	
+	return mapID;
+}
+
+function void Univers_LoadHub()
+{
+	int currentAct;
+	int mapID;
+
+	mapID = Univers_HubIdGet();
+	
+	Map_Load_MaskCusto_Update();
+
+	Map_Load_ES_WithBink(mapID,1, -1, Cf_LoadMapFlags_LoadListMask);
+}
+
+function void Univers_LoadHubWithBink()
+{
+	int currentAct;
+	int mapID;
+
+	mapID = Univers_HubIdGet();
+		
+	Map_Load_MaskCusto_Update();
+	
+	Map_Load_ES_WithBink(mapID,1,-1, Cf_LoadMapFlags_LoadListMask);
+}

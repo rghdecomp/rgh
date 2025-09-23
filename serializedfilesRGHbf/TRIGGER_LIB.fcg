@@ -1,0 +1,1444 @@
+function_trigger_global int Always_True(stock & ref)
+{
+	return true;
+}
+
+function_trigger_global int Always_False(stock & ref)
+{
+	return false;
+}
+
+
+///TrigExec_DBG_DisplayString  float1 _f_Duration
+// _f_Duration = Durée d'affichage de DEBUG - TRIGGER
+function_trigger_global int TrigExec_DBG_DisplayString(stock &ref)
+{
+	STR_Display_W("/F00//CFFFFFF//S0.7//jxcyc/DEBUG - TRIGGER", cvector(0.5, 0.5, 0.0), ref.f32_1);
+	return true;
+}
+
+function void TRIGGER_ReInitObject(object to_Gao) {
+	int ti_Mdf_Count;
+	modifier tmdf_Current;
+	int ti_i;
+		
+	if(to_Gao)
+	{
+		@o(to_Gao) OBJ_PosSetCut(@o(to_Gao) OBJ_PosInitGet());
+		@o(to_Gao) OBJ_SightSet(@o(to_Gao) OBJ_SightInitGet(), @o(to_Gao) OBJ_BankingInitGet());
+		
+		ti_Mdf_Count = @o(to_Gao) OBJ_MdfCountGet();
+		
+		for(ti_i=0; ti_i < ti_Mdf_Count; ti_i++)
+		{
+			tmdf_Current = @o(to_Gao) OBJ_MdfByRankGet(ti_i);
+			@m(tmdf_Current) MDF_Reinit();		
+		}
+	}
+}
+
+///TrigExec_ReInitObject obj1 to_Gao1 obj2 to_Gao2 obj3 to_Gao3 obj4 to_Gao4
+//	Reinitialise les objets passés en paramètre
+function_trigger_global int TrigExec_ReInitObject(stock & ref) {
+	int ti_Trigger_Done = false;
+
+	TRIGGER_ReInitObject(ref.po_Obj1);
+	
+	TRIGGER_ReInitObject(ref.po_Obj2);
+	
+	TRIGGER_ReInitObject(ref.po_Obj3);
+	
+	TRIGGER_ReInitObject(ref.po_Obj4);
+	
+	ti_Trigger_Done = true;
+	return ti_Trigger_Done;
+}
+///TrigTest_MultiGAOApply obj1 Gao1 obj2 Gao2 obj3 Gao3 obj4 Gao4 int1 Type int5 InvertResult
+//	Test if all the gaos are Apllying or if at least one of the Gao is Applying,
+//	depending of the Type parameter
+//	Gao1 => First Gao to test
+//	Gao2 => Second Gao to test
+//	Gao3 => Third Gao to test
+//	Gao4 => Fourth Gao to test
+//	Type => The type of the test: 
+//				0 : All the Gaos are Apllying
+//				1 : At least one of the Gao is Applying
+//	InvertResult => Inverse the result of the test if == 1
+
+function_trigger_global int TrigTest_MultiGAOApply(stock & ref)
+{
+	int ti_Type, ti_InvertResult;
+	int ti_MultiGAOApply = false;
+	object to_Gao1, to_Gao2, to_Gao3, to_Gao4;
+	
+	ti_Type = ref.i32_1;
+	ti_InvertResult = ref.i32_5;
+	to_Gao1 = ref.po_Obj1;
+	to_Gao2 = ref.po_Obj2;
+	to_Gao3 = ref.po_Obj3;
+	to_Gao4 = ref.po_Obj4;	
+	
+	if(ti_Type)
+	{
+//		At least one of the Gao is Applying
+		if(to_Gao1)
+		{
+			ti_MultiGAOApply = @o(to_Gao1) OBJ_IsApply();	
+			
+			if(!ti_MultiGAOApply && to_Gao2)
+			{
+				ti_MultiGAOApply = @o(to_Gao2) OBJ_IsApply();
+				
+				if(!ti_MultiGAOApply && to_Gao3)
+				{
+					ti_MultiGAOApply = @o(to_Gao3) OBJ_IsApply();
+					
+					if(!ti_MultiGAOApply && to_Gao4)
+					{
+						ti_MultiGAOApply = @o(to_Gao4) OBJ_IsApply();
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+//		All the Gaos are Apllying
+		if(to_Gao1)
+		{
+			ti_MultiGAOApply = @o(to_Gao1) OBJ_IsApply();	
+			
+			if(ti_MultiGAOApply && to_Gao2)
+			{
+				ti_MultiGAOApply = @o(to_Gao2) OBJ_IsApply();
+				
+				if(ti_MultiGAOApply && to_Gao3)
+				{
+					ti_MultiGAOApply = @o(to_Gao3) OBJ_IsApply();
+					
+					if(ti_MultiGAOApply && to_Gao4)
+					{
+						ti_MultiGAOApply = @o(to_Gao4) OBJ_IsApply();
+					}
+				}
+			}
+		}		
+	}
+	
+	if(ti_InvertResult)
+	{
+		ti_MultiGAOApply = !ti_MultiGAOApply;
+	}
+	
+	return ti_MultiGAOApply;
+}
+
+///TrigTest_MultiGAORender obj1 Gao1 obj2 Gao2 obj3 Gao3 obj4 Gao4 int1 Type int5 InvertResult
+//	Test if all the gaos are Rendered or if at least one of the Gao is Rendered,
+//	depending of the Type parameter
+//	Gao1 => First Gao to test
+//	Gao2 => Second Gao to test
+//	Gao3 => Third Gao to test
+//	Gao4 => Fourth Gao to test
+//	Type => The type of the test: 
+//				0 : All the Gaos are Rendered
+//				1 : At least one of the Gao is Rendered
+//	InvertResult => Inverse the result of the test if == 1
+
+function_trigger_global int TrigTest_MultiGAORender(stock & ref)
+{
+	int ti_Type, ti_InvertResult;
+	int ti_MultiGAOApply = false;
+	object to_Gao1, to_Gao2, to_Gao3, to_Gao4;
+	
+	ti_Type = ref.i32_1;
+	ti_InvertResult = ref.i32_5;
+	to_Gao1 = ref.po_Obj1;
+	to_Gao2 = ref.po_Obj2;
+	to_Gao3 = ref.po_Obj3;
+	to_Gao4 = ref.po_Obj4;	
+	
+	if(ti_Type)
+	{
+//		At least one of the Gao is Applying
+		if(to_Gao1)
+		{
+			ti_MultiGAOApply = @o(to_Gao1) OBJ_IsRender();	
+			
+			if(!ti_MultiGAOApply && to_Gao2)
+			{
+				ti_MultiGAOApply = @o(to_Gao2) OBJ_IsRender();
+				
+				if(!ti_MultiGAOApply && to_Gao3)
+				{
+					ti_MultiGAOApply = @o(to_Gao3) OBJ_IsRender();
+					
+					if(!ti_MultiGAOApply && to_Gao4)
+					{
+						ti_MultiGAOApply = @o(to_Gao4) OBJ_IsRender();
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+//		All the Gaos are Apllying
+		if(to_Gao1)
+		{
+			ti_MultiGAOApply = @o(to_Gao1) OBJ_IsRender();	
+			
+			if(ti_MultiGAOApply && to_Gao2)
+			{
+				ti_MultiGAOApply = @o(to_Gao2) OBJ_IsRender();
+				
+				if(ti_MultiGAOApply && to_Gao3)
+				{
+					ti_MultiGAOApply = @o(to_Gao3) OBJ_IsRender();
+					
+					if(ti_MultiGAOApply && to_Gao4)
+					{
+						ti_MultiGAOApply = @o(to_Gao4) OBJ_IsRender();
+					}
+				}
+			}
+		}		
+	}
+	
+	if(ti_InvertResult)
+	{
+		ti_MultiGAOApply = !ti_MultiGAOApply;
+	}
+	
+	return ti_MultiGAOApply;
+}
+
+///TrigTest_MainActor  obj1 MainActor int5 InvertResult
+function_trigger_global int TrigTest_MainActor(stock & ref)
+{
+	int		ti_key;
+	int		ti_inv_test;
+	int		ti_return;
+	
+	ti_inv_test = ref.i32_5;
+
+	if (SCR_MainActorGet(0) == ref.po_Obj1)
+		ti_return = true;
+	else
+		ti_return = false;
+	
+	if (ti_inv_test)
+		ti_return = 1 - ti_return;
+
+	return ti_return;
+}
+
+///TrigTest_KeyPressed int1 Key int5 InvertResult
+function_trigger_global int TrigTest_KeyPressed(stock & ref)
+{
+	int		ti_key;
+	int		ti_inv_test;
+	int		ti_return;
+	
+	ti_key = ref.i32_1;
+	ti_inv_test = ref.i32_5;
+
+	if (IO_KeyboardKeyPressed(ti_key))
+		ti_return = true;
+	else
+		ti_return = false;
+	
+	if (ti_inv_test)
+		ti_return = 1 - ti_return;
+
+	return ti_return;
+}
+
+
+///TrigTest_JoyButtonPressed int1 Key int5 InvertResult
+function_trigger_global int TrigTest_JoyButtonPressed(stock & ref)
+{
+	int		ti_key;
+	int		ti_inv_test;
+	int		ti_return;
+	
+	ti_key = ref.i32_1;
+	ti_inv_test = ref.i32_5;
+
+	if (IO_JoystickButtonPressed(0,ti_key))
+		ti_return = true;
+	else
+		ti_return = false;
+	
+	if (ti_inv_test)
+		ti_return = 1 - ti_return;
+
+	return ti_return;
+}
+
+function int TrigTest_PosInBV(vector tv_pos, object to_BV)
+{
+	modifier	tmdf_zde, tmdf_script;
+	int		ti_i;
+
+	for( ti_i = 0; ti_i < 5; ti_i++ )
+	{
+		tmdf_zde = @o(to_BV) OBJ_MDFGet(ViD_ENGTYPE_ZDE, ti_i);
+		if (!tmdf_zde)
+			return false;								// Plus de MDF on sort !
+		else
+		{
+
+			#ifndef _FINAL_
+			if ( ! @m( tmdf_zde) ZDE_CustomBitsGet())
+				@m(tmdf_zde) ZDE_SnPSet(none);		// PAS DE SNP sur les ZDEs qui servent avec un PIVOT
+			#endif
+
+//			#ifndef _FINAL_
+//
+//				tmdf_script = @o(to_BV) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, 0);
+//				if ( tmdf_script
+//				 && ! @m( tmdf_script) SCR_IsModel("Trigger_Test/ActivatorTrigger")
+//				 && ! @m( tmdf_script) SCR_IsModel("_CameraAll/SCamAdjust")
+//				 && ! @m( tmdf_script) SCR_IsModel("ChronoTimer")
+//				 && ! @m( tmdf_script) SCR_IsModel("ES_Map")
+//				 && ! @m( tmdf_script) SCR_IsModel("GST_Objective"))
+//					DBG_Error("Ne pas utiliser de PosInBV sur une ZDE ayant un script( sauf Activtor Trigger ChronoTimer SCamAdjust ES_Map GST_Objective)");
+//			#endif
+		
+			
+			if( @m(tmdf_zde) MDF_IsApply() && @m(tmdf_zde) ZDE_ZdePosOverlap(tv_pos) )
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+//function int TrigTest_PivotInBV(object to_pivot, object to_BV, int ti_inv_test)
+//{
+//	int ti_result = TrigTest_PosInBV(@o(to_pivot) OBJ_PosGet(), to_BV);
+//
+//	if (ti_inv_test)
+//	{
+//		if (ti_result)
+//			ti_result = false;
+//		else
+//			ti_result = true;
+//	}
+//	return(ti_result);
+//}
+
+function int TrigTest_PivotInBV_WithState(object to_pivot, object to_BV, int ti_inv_test, int ti_state, int &ti_oldValue)
+{
+	int ti_result = TrigTest_PosInBV(@o(to_pivot) OBJ_PosGet(), to_BV);
+	int ti_temp;
+	
+	ti_temp = ti_result;
+	
+	if(ti_state)
+	{		
+		if(ti_inv_test)
+		{
+//			(Out) Teste si à la trame précédent le pivot était dans la BV et si à la trame actuelle il est hors BV
+			if(!ti_oldValue && !ti_result)
+			{
+				ti_result = true;	//	on vas inverser plus bas
+			}
+		}
+		else
+		{
+//			(In) Si à la trame précédent le pivot était dans la BV on ne vient pas juste de sortir		
+			if(ti_oldValue)
+			{
+				ti_result = false;
+			}				
+		}
+	}
+	
+	ti_oldValue = ti_temp;
+
+	if (ti_inv_test)
+	{
+		if (ti_result)
+			ti_result = false;
+		else
+			ti_result = true;
+	}
+	return(ti_result);
+}
+
+
+///TriggerTest_PivotInBV obj1 to_pivot obj2 to_bv int1 inverse int2 ti_state
+// réalise le test sur les 5 premières ZDE de l'objet to_bv, à condition qu'elles soient actives
+// inverse faux -> retourne vrai si le pivot de to_pivot est dans au moins 1 des ZDE actives de to_bv
+// inverse vrai -> retourne vrai si le pivot de to_pivot n'est dans aucune des ZDE actives de to_bv
+// to_bv : si none, alors le gao appelant est automatiquement sélectionné
+// ti_state : permet de savoir si on vient juste de rentrer ou juste de sortir de la BV
+//
+//	In/Out = 0		(valeur par défaut) :
+//
+//		- si inverse = faux : Test de présence dans la BV  
+//		- si inverse = vrai : Test de non présence dans la BV 
+//
+//	Just In/Just Out = 1	:
+//		
+//		- si inverse = faux : Teste si à la trame précédent le pivot était hors BV
+//			et si à la trame actuelle il est dans la BV.
+//
+//		- si inverse = vrai : Teste si à la trame précédent le pivot était dans la BV
+//			et si à la trame actuelle il est hors BV, 
+//function_trigger_global int TriggerTest_PivotInBV(stock & ref)
+//{
+//	int ti_OldValue;
+//	int ti_Result;
+//	
+//	DBG_TraceObj(0, SCR_ObjMe());
+//	DBG_TraceString(0, " ERROR, utilisez : TrigTest_PivotInBV \n");
+//	DBG_Error(" ERROR:(GAO dans le log) utilisez : TrigTest_PivotInBV \n");
+//	if( ! ref.po_Obj2 )
+//		ref.po_Obj2 = SCR_ObjMe();
+//		
+//	if(ref.i32_3)
+//	{
+//		ti_OldValue = true;
+//	}
+//	else
+//	{
+//		ti_OldValue = false;
+//	}
+//	
+//	ti_Result = TrigTest_PivotInBV_WithState(ref.po_Obj1, ref.po_Obj2, ref.i32_1, ref.i32_2, ti_OldValue);
+//	
+//	ref.i32_3 = ti_OldValue;
+//	
+//	return ti_Result;
+//}
+
+
+///TrigTest_PivotInBV obj1 to_pivot obj2 to_bv int1 inverse int2 ti_state
+// réalise le test sur les 5 premières ZDE de l'objet to_bv, à condition qu'elles soient actives
+// inverse faux -> retourne vrai si le pivot de to_pivot est dans au moins 1 des ZDE actives de to_bv
+// inverse vrai -> retourne vrai si le pivot de to_pivot n'est dans aucune des ZDE actives de to_bv
+// to_bv : si none, alors le gao appelant est automatiquement sélectionné
+// ti_state : permet de savoir si on vient juste de rentrer ou juste de sortir de la BV
+//
+//	In/Out = 0		(valeur par défaut) :
+//
+//		- si inverse = faux : Test de présence dans la BV  
+//		- si inverse = vrai : Test de non présence dans la BV 
+//
+//	Just In/Just Out = 1	:
+//		
+//		- si inverse = faux : Teste si à la trame précédent le pivot était hors BV
+//			et si à la trame actuelle il est dans la BV.
+//
+//		- si inverse = vrai : Teste si à la trame précédent le pivot était dans la BV
+//			et si à la trame actuelle il est hors BV, 
+function_trigger_global int TrigTest_PivotInBV(stock & ref)
+{
+	int ti_OldValue;
+	int ti_Result;
+	
+	if( ! ref.po_Obj2 )
+		ref.po_Obj2 = SCR_ObjMe();
+		
+	if(ref.i32_3)
+	{
+		ti_OldValue = true;
+	}
+	else
+	{
+		ti_OldValue = false;
+	}
+	
+	ti_Result = TrigTest_PivotInBV_WithState(ref.po_Obj1, ref.po_Obj2, ref.i32_1, ref.i32_2, ti_OldValue);
+	
+	ref.i32_3 = ti_OldValue;
+	
+	return ti_Result;
+}
+
+
+///TriggerTest_ActorPlayedPivotInBV obj1 to_pivot obj2 to_bv int1 inverse
+// réalise le test sur les 5 premières ZDE de l'objet to_bv, à condition qu'elles soient actives
+// inverse faux -> retourne vrai si le pivot de to_pivot est dans au moins 1 des ZDE actives de to_bv
+// inverse vrai -> retourne vrai si le pivot de to_pivot n'est dans aucune des ZDE actives de to_bv
+// 				  -> retourne vrai aussi si l acteur ne st pas joué par le joueur 0.
+// to_bv : si none, alors le gao appelant est automatiquement sélectionné
+// ti_state : permet de savoir si on vient juste de rentrer ou juste de sortir de la BV
+//
+//	In/Out = 0		(valeur par défaut) :
+//
+//		- si inverse = faux : Test de présence dans la BV  
+//		- si inverse = vrai : Test de non présence dans la BV 
+//
+//	Just In/Just Out = 1	:
+//		
+//		- si inverse = faux : Teste si à la trame précédent le pivot était hors BV
+//			et si à la trame actuelle il est dans la BV.
+//
+//		- si inverse = vrai : Teste si à la trame précédent le pivot était dans la BV
+//			et si à la trame actuelle il est hors BV, 
+//function_trigger_global int TriggerTest_ActorPlayedPivotInBV(stock & ref)
+//{
+//	int ti_OldValue;
+//	int ti_Result;
+//	
+//	DBG_TraceObj(0, SCR_ObjMe());
+//	DBG_TraceString(0, " ERROR, utilisez : TrigTest_ActorPlayedPivotInBV \n");
+//	DBG_Error(" ERROR:(GAO dans le log) utilisez : TrigTest_ActorPlayedPivotInBV \n");
+//	
+//	if( ! ref.po_Obj2 )
+//		ref.po_Obj2 = SCR_ObjMe();
+//	if ( ref.po_Obj1 != SCR_MainActorGet(0))
+//	{
+//		// C'est pas le main acteur
+//		if ( ref.i32_1)
+//			return true;	// on inverse
+//		return false;		
+//	}
+//	
+//	if(ref.i32_3)
+//	{
+//		ti_OldValue = true;
+//	}
+//	else
+//	{
+//		ti_OldValue = false;
+//	}
+//	
+//	ti_Result = TrigTest_PivotInBV_WithState(ref.po_Obj1, ref.po_Obj2, ref.i32_1, ref.i32_2, ti_OldValue);
+//	
+//	ref.i32_3 = ti_OldValue;
+//	
+//	return ti_Result;
+//}
+
+///TrigTest_ActorPlayedPivotInBV obj1 to_pivot obj2 to_bv int1 inverse
+// réalise le test sur les 5 premières ZDE de l'objet to_bv, à condition qu'elles soient actives
+// inverse faux -> retourne vrai si le pivot de to_pivot est dans au moins 1 des ZDE actives de to_bv
+// inverse vrai -> retourne vrai si le pivot de to_pivot n'est dans aucune des ZDE actives de to_bv
+// 				  -> retourne vrai aussi si l acteur ne st pas joué par le joueur 0.
+// to_bv : si none, alors le gao appelant est automatiquement sélectionné
+// ti_state : permet de savoir si on vient juste de rentrer ou juste de sortir de la BV
+//
+//	In/Out = 0		(valeur par défaut) :
+//
+//		- si inverse = faux : Test de présence dans la BV  
+//		- si inverse = vrai : Test de non présence dans la BV 
+//
+//	Just In/Just Out = 1	:
+//		
+//		- si inverse = faux : Teste si à la trame précédent le pivot était hors BV
+//			et si à la trame actuelle il est dans la BV.
+//
+//		- si inverse = vrai : Teste si à la trame précédent le pivot était dans la BV
+//			et si à la trame actuelle il est hors BV, 
+function_trigger_global int TrigTest_ActorPlayedPivotInBV(stock & ref)
+{
+	int ti_OldValue;
+	int ti_Result;
+	
+	if( ! ref.po_Obj2 )
+		ref.po_Obj2 = SCR_ObjMe();
+	if ( ref.po_Obj1 != SCR_MainActorGet(0))
+	{
+		// C'est pas le main acteur
+		if ( ref.i32_1)
+			return true;	// on inverse
+		return false;		
+	}
+	
+	if(ref.i32_3)
+	{
+		ti_OldValue = true;
+	}
+	else
+	{
+		ti_OldValue = false;
+	}
+	
+	ti_Result = TrigTest_PivotInBV_WithState(ref.po_Obj1, ref.po_Obj2, ref.i32_1, ref.i32_2, ti_OldValue);
+	
+	ref.i32_3 = ti_OldValue;
+	
+	return ti_Result;
+}
+
+
+
+function int TrigTest_BVBVOverlap(object to_A, object to_B, int ti_inv_test)
+{
+	int			ti_result;
+	modifier 	tmod_box_A;
+	modifier 	tmod_box_B;
+
+	
+	tmod_box_A = @o(to_A) OBJ_MDFGet(ViD_ENGTYPE_ZDE, 0);
+	tmod_box_B = @o(to_B) OBJ_MDFGet(ViD_ENGTYPE_ZDE, 0);
+	
+	ti_result = @m(tmod_box_A) ZDE_ZdeZdeOverlap(tmod_box_B);
+	if (ti_inv_test)
+	{
+		if (ti_result)
+			ti_result = false;
+		else
+			ti_result = true;
+	}
+	return(ti_result);
+}
+
+function int TrigTest_Dist(object to_A, object to_B, float tf_dist, int ti_inv_test)
+{
+	int		ti_result;
+
+	if (@o(to_A) OBJ_SqrDist(to_B) < tf_dist * tf_dist)
+		ti_result = true;
+	else
+		ti_result = false;
+
+	if (ti_inv_test)
+	{
+		if (ti_result)
+			ti_result = false;
+		else
+			ti_result = true;
+	}
+	return(ti_result);
+}
+
+///TrigTest_IsNearEnough obj1 to_gao_1 obj2 to_gao_2 float1 tf_distance int5 ti_inverse_test
+//	to_gao_1 => début de la ligne à mesurer (empty = Obj_Me)
+//	to_gao_2 => fin de la ligne à mesurer (empty = MainActor)
+//	distance => la distance entre to_gao_1 et to_gao_2
+//	ti_inverse_test (int5) => inverse le resultat
+//	retourne vrai si la distance entre to_gao_1 et to_gao_2 est inférieure a tf_distance
+function_trigger_global int TrigTest_IsNearEnough(stock & ref)
+{
+	object to_gao_1, to_gao_2;
+	int ti_Result = false;	
+
+	if(ref.po_Obj1)
+	{
+		to_gao_1 = ref.po_Obj1;
+	}
+	else
+	{
+		to_gao_1 = SCR_ObjMe();
+	}
+	
+	if(ref.po_Obj2)
+	{
+		to_gao_2 = ref.po_Obj2;
+	}
+	else
+	{
+		to_gao_2 = SCR_MainActorGet(0);	
+	}
+	
+	ti_Result = TrigTest_Dist(to_gao_1, to_gao_2, ref.f32_1, ref.i32_5);
+	
+	return ti_Result;
+}
+
+function int TrigTest_HorzDist(object to_A, object to_B, float tf_dist, int ti_inv_test)
+{
+	int		ti_result;
+
+	tf_dist *= tf_dist;
+	
+	if (@o(to_A) OBJ_SqrHorzDist(to_B) < tf_dist * tf_dist)
+		ti_result = true;
+	else
+		ti_result = false;
+
+	if (ti_inv_test)
+	{
+		if (ti_result)
+			ti_result = false;
+		else
+			ti_result = true;
+	}
+	return(ti_result);
+}
+
+function int TrigTest_PivotInCamembert(object to_pivot, object to_camembert, float tf_rayon, float tf_Z_min, float tf_Z_max, float tf_angle, int ti_inv_test)
+{
+	int		ti_result;
+	
+	float	tf_Z;
+	float	tf_dist;
+
+	vector tv_AB; 
+
+	tv_AB = @o(to_pivot) OBJ_PosGet();
+	tv_AB -= @o(to_camembert) OBJ_PosGet();
+
+	tf_Z = MTH_VecDotProduct(tv_AB, @o(to_camembert) OBJ_BankingGet());
+	if (tf_Z < tf_Z_min || tf_Z > tf_Z_max)
+	{
+		ti_result = false;
+	}
+	else
+	{
+		tv_AB -= @o(to_camembert) OBJ_BankingGet() * tf_Z;
+
+		tf_dist = MTH_VecSqrNorm(tv_AB);
+		if (tf_dist > tf_rayon * tf_rayon)
+		{
+			ti_result = false;
+		}
+		else if (tf_dist > 0.0 )
+		{
+			tf_dist = MTH_FloatSqrt(tf_dist);
+			
+			tv_AB /= tf_dist;
+
+			if (MTH_VecDotProduct(tv_AB, @o(to_camembert) OBJ_SightGet()) >= MTH_FloatCos(tf_angle * 0.5 * Cf_PiBy180))
+				ti_result = true;
+			else
+				ti_result = false;
+		}
+		else
+		{
+			ti_result = true;
+		}
+		
+	}
+
+
+	if (ti_inv_test)
+	{
+		if (ti_result)
+			ti_result = false;
+		else
+			ti_result = true;
+	}
+	
+	return(ti_result);
+}
+
+
+///TriggerTest_OBJ_CustomBits obj1 objet int1 bits_somme int5 inverse
+//function_trigger_global int TriggerTest_OBJ_CustomBits(stock & ref)
+//{
+//	int	ti_result;
+//	int	ti_bits;
+//	int	ti_bits_test;
+//	object	to_gao;
+//	
+//
+//	DBG_TraceObj(0, SCR_ObjMe());
+//	DBG_TraceString(0, " ERROR, utilisez : TrigTest_OBJ_CustomBits \n");
+//	DBG_Error(" ERROR:(GAO dans le log) utilisez : TrigTest_OBJ_CustomBits \n");
+//	to_gao = ref.po_Obj1;
+//	if( ! to_gao )
+//		DBG_Error("pas de gao1 ???");
+//	
+//	ti_bits_test = ref.i32_1;
+//	ti_bits = @o(to_gao) OBJ_CustomBitsGet();
+//	if( ti_bits & ti_bits_test )
+//	{
+//		if( ref.i32_5 )
+//			ti_result = false;
+//		else
+//			ti_result = true;
+//	}
+//	else
+//	{
+//		if( ref.i32_5 )
+//			ti_result = true;
+//		else
+//			ti_result = false;
+//	}
+//	
+//	return ti_result;
+//}
+
+
+///TrigTest_OBJ_CustomBits obj1 objet int1 bits_somme int5 inverse
+function_trigger_global int TrigTest_OBJ_CustomBits(stock & ref)
+{
+	int	ti_result;
+	int	ti_bits;
+	int	ti_bits_test;
+	object	to_gao;
+	
+	to_gao = ref.po_Obj1;
+	if( ! to_gao )
+		DBG_Error("pas de gao1 ???");
+	
+	ti_bits_test = ref.i32_1;
+	ti_bits = @o(to_gao) OBJ_CustomBitsGet();
+	if( (ti_bits & ti_bits_test) == ti_bits_test )
+	{
+		if( ref.i32_5 )
+			ti_result = false;
+		else
+			ti_result = true;
+	}
+	else
+	{
+		if( ref.i32_5 )
+			ti_result = true;
+		else
+			ti_result = false;
+	}
+	
+	return ti_result;
+}
+
+
+
+///TrigTest_OBJ_MultipleCustomBits obj1 objet1 obj2 objet2 obj3 objet3 obj4 objet4 obj5 objet5 int1 bits_somme int2 operateur int5 inverse
+// bits_somme : somme des bits à tester
+// operateur : 
+// 0 = OU (AU MOINS UN objet doit avoir la somme de bit)
+// 1 = ET (TOUS les objets doivent avoir la somme de bit)
+// inverse : 1 = inverse le resultat
+// objetN : objet dont les customs bits vont être testés
+function_trigger_global int TrigTest_OBJ_MultipleCustomBits(stock &ref)
+{
+	int		ti_result;
+	int 	ti_bits;
+	int		ti_i;
+	object	to_Objects[5];
+	
+	// get params
+	to_Objects[0] = ref.po_Obj1;
+	to_Objects[1] = ref.po_Obj2;  
+	to_Objects[2] = ref.po_Obj3; 
+	to_Objects[3] = ref.po_Obj4; 
+	to_Objects[4] = ref.po_Obj5; 
+	
+	// test first object
+	if(!to_Objects[0])
+		DBG_Error("il faut au moins un objet à tester");
+		
+	for (ti_i = 0; ti_i < 5; ti_i++)
+	{
+		if (to_Objects[ti_i])
+		{
+			ti_bits = @o(to_Objects[ti_i]) OBJ_CustomBitsGet();
+			
+			if (ref.i32_2)	// ET
+			{ 
+				ti_result = true;
+				if ((ti_bits & ref.i32_1) != ref.i32_1)
+				{
+					ti_result = false;
+					break;
+				}
+			}
+			else				// OU
+			{
+				ti_result = false;
+				if ((ti_bits & ref.i32_1) == ref.i32_1)
+				{
+					ti_result = true;
+					break;
+				}
+			}
+		}
+	}  
+	
+
+	if (ref.i32_5)
+		return !ti_result;
+	else
+		return ti_result;
+}
+
+
+
+///TrigExec_Destroy obj1 to_obj
+function_trigger_global int TrigExec_Destroy(stock & ref)
+{
+	if(!ref.po_Obj1)
+		ref.po_Obj1 = SCR_ObjMe();
+	@o(ref.po_Obj1) OBJ_Destroy();
+	return true;
+}
+
+/////TrigExec_MdfActive mdf1 modifier1 mdf2 modifier2 mdf3 modifier3 mdf4 modifier4 mdf5 modifier5 int1 active1 int2 active2 int3 active3 int4 active4 int5 active5 obj1 object1 obj2 object2 obj3 object3 obj4 object4 obj5 object5
+//function_trigger_global int TrigExec_MdfActive(stock & ref)
+//{
+//	if(ref.po_Mdf1)
+//		@m(ref.po_Mdf1) MDF_ControlApplySet(ref.i32_1);
+//	if(ref.po_Mdf2)
+//		@m(ref.po_Mdf2) MDF_ControlApplySet(ref.i32_2);
+//	if(ref.po_Mdf3)
+//		@m(ref.po_Mdf3) MDF_ControlApplySet(ref.i32_3);
+//	if(ref.po_Mdf4)
+//		@m(ref.po_Mdf4) MDF_ControlApplySet(ref.i32_4);
+//	if(ref.po_Mdf5)
+//		@m(ref.po_Mdf5) MDF_ControlApplySet(ref.i32_5);
+//}
+//
+
+///TrigExec_MdfActive int1 active int2 mdf_type int3 mdf_rank obj1 object
+// active : 0 pour desactiver, 1 pour activer
+// mdf_type:
+//		- Script :		0
+//		- Particule :	10
+//		- ZDE :		19
+//		- COB :		20
+//		- Dynamic :	21
+//		- NOX :		25
+function_trigger_global int TrigExec_MdfActive(stock & ref)
+{
+	modifier tmdf = @o(ref.po_Obj1) OBJ_MDFGet(ref.i32_2,ref.i32_3);
+	if(tmdf)
+	{
+		@m(tmdf) MDF_ControlApplySet(ref.i32_1);
+		return true;
+	}
+	else
+	{
+		DBG_TraceError(0,"TrigExec_MdfActive, ce type de modifier n'existe pas sur l'objet");
+		return false;
+	}
+}
+
+///TrigExec_MdfVisible int1 active int2 mdf_type int3 mdf_rank obj1 object
+// active : 0 pour desactiver, 1 pour activer
+// mdf_type:
+//		- Script :		0
+//		- Visual :		3
+//		- Particule :	10
+//		- ZDE :		19
+//		- COB :		20
+//		- Dynamic :	21
+//		- NOX :		25
+function_trigger_global int TrigExec_MdfVisible(stock & ref)
+{
+	modifier tmdf = @o(ref.po_Obj1) OBJ_MDFGet(ref.i32_2,ref.i32_3);
+	if(tmdf)
+	{
+		@m(tmdf) MDF_ControlRenderSet(ref.i32_1);
+		return true;
+	}
+	else
+	{
+		DBG_TraceError(0,"TrigExec_MdfActive, ce type de modifier n'existe pas sur l'objet");
+		return false;
+	}
+}
+
+///TrigTest_KindOfObjInBV obj1 to_kind obj2 to_BV
+function_trigger_global int TrigTest_KindOfObjInBV(stock & ref)
+{
+	int ti_i;
+	object tao_obj[30];
+	if(!ref.po_Obj2)
+		ref.po_Obj2 = SCR_ObjMe();
+//		ZDE_ZdeZdeOverlap()
+	int ti_nb = MDF_ZDE(ref.po_Obj2) ZDE_ZdePosGetAllOverlaps(&tao_obj[0],30,2);
+	int ti_kind = MDF_Script(ref.po_Obj1) SCR_ModelKeyGet();
+	modifier	tmdf_SCR = SCR_CO_MdfNull;
+	for(ti_i=0;ti_i<ti_nb;ti_i++)
+	{
+		tmdf_SCR = @o(tao_obj[ti_i]) OBJ_MDFGet(ViD_ENGTYPE_SCRipt, 0);
+		if( tmdf_SCR )
+			if( @m(tmdf_SCR) SCR_ModelKeyGet()==ti_kind)
+				return true;			
+	}
+	return false;
+}
+
+
+
+
+///TrigExec_GaoControlFlagSet obj1 gao1 obj2 gao2 obj3 gao3 obj4 gao4 obj5 gao5 int1 mode
+// gao1-5 : les gaos dont on veut modifier les control flags 
+// mode : 
+//		0 : no apply, no render
+//		1 : apply, render
+//
+//		2 : apply, no render
+//		3 : no apply, render
+function_trigger_global int TrigExec_GaoControlFlagSet(stock & ref)
+{
+	int		ti_mode;
+	int		ti_apply;
+	int		ti_render;
+	object	to_gao;
+	
+	ti_mode = ref.i32_1;
+	switch(ti_mode)
+	{
+		case 0:
+			ti_apply = false;
+			ti_render = false;
+			break;
+		case 1 :
+			ti_apply = true;
+			ti_render = true;
+			break;
+		case 2 :
+			ti_apply = true;
+			ti_render = false;
+			break;
+		case 3 :
+			ti_apply = false;
+			ti_render = true;
+			break;
+		default:
+			#ifndef _FINAL_
+			DBG_Error("erreur dans la config du trigger TrigExec_GaoControlFlagSet");
+			#endif
+			break;
+	}
+	
+	to_gao = ref.po_Obj1;
+	if( to_gao )
+	{
+		@o(to_gao) OBJ_ControlApplySet(ti_apply);
+		@o(to_gao) OBJ_ControlRenderSet(ti_render);
+	}
+	to_gao = ref.po_Obj2;
+	if( to_gao )
+	{
+		@o(to_gao) OBJ_ControlApplySet(ti_apply);
+		@o(to_gao) OBJ_ControlRenderSet(ti_render);
+	}
+	to_gao = ref.po_Obj3;
+	if( to_gao )
+	{
+		@o(to_gao) OBJ_ControlApplySet(ti_apply);
+		@o(to_gao) OBJ_ControlRenderSet(ti_render);
+	}
+	to_gao = ref.po_Obj4;
+	if( to_gao )
+	{
+		@o(to_gao) OBJ_ControlApplySet(ti_apply);
+		@o(to_gao) OBJ_ControlRenderSet(ti_render);
+	}
+	to_gao = ref.po_Obj5;
+	if( to_gao )
+	{
+		@o(to_gao) OBJ_ControlApplySet(ti_apply);
+		@o(to_gao) OBJ_ControlRenderSet(ti_render);
+	}
+	
+	return true;
+}
+
+///TrigTest_ObjIsOnScreen  obj1 ObjToCheck float1 MargeUpDown float2 MargeRightLeft int1 Debug
+function_trigger_global int TrigTest_ObjIsOnScreen(stock & ref)
+{
+	vector tv_Min = Cv_NullVector;
+	vector tv_Max = Cv_NullVector;
+	object to_Gao;
+	int ti_Obj_IsOnScreen = false;
+	
+	to_Gao = ref.po_Obj1;
+
+	if(ref.i32_1)
+	{
+		STR_Display_W("/F0//S1.0//jxcyc/+", cvector(ref.f32_2,ref.f32_1,0.0), Cf_Duration_Une_Trame);
+		STR_Display_W("/F0//S1.0//jxcyc/+", cvector(ref.f32_2,1.0 - ref.f32_1,0.0), Cf_Duration_Une_Trame);
+		STR_Display_W("/F0//S1.0//jxcyc/+", cvector(1.0 - ref.f32_2,ref.f32_1,0.0), Cf_Duration_Une_Trame);
+		STR_Display_W("/F0//S1.0//jxcyc/+", cvector(1.0 - ref.f32_2,1.0 - ref.f32_1,0.0), Cf_Duration_Une_Trame);
+	}
+
+//	DBG_Breakpoint();
+	if( @o(to_Gao) OBJ_BVView3Dto2DRect(0, tv_Min, tv_Max))
+	{
+		if(((tv_Min.x>ref.f32_2) || (tv_Max.x>ref.f32_2))
+		&& ((tv_Min.x<1.0 - ref.f32_2) || (tv_Max.x< 1.0 - ref.f32_2))
+		&& ((tv_Min.y>ref.f32_1) || (tv_Max.y>ref.f32_1))
+		&& ((tv_Min.y<1.0 - ref.f32_1) || (tv_Max.y< 1.0 - ref.f32_1))
+		)
+		{
+			ti_Obj_IsOnScreen = true;
+			if(ref.i32_1)
+			{
+				STR_Display_W("/F0//S1.0//jxcyc//C00FF00/+", tv_Min, Cf_Duration_Une_Trame);
+				STR_Display_W("/F0//S1.0//jxcyc//C00FF00/+", tv_Max, Cf_Duration_Une_Trame);
+				STR_Display_W("/F0//S1.0//jxcyc//C00FF00/+", cvector(tv_Min.x,tv_Max.y,0.0), Cf_Duration_Une_Trame);
+				STR_Display_W("/F0//S1.0//jxcyc//C00FF00/+", cvector(tv_Max.x,tv_Min.y,0.0), Cf_Duration_Une_Trame);
+			}
+		}
+		else
+		{
+			if(ref.i32_1)
+			{
+				STR_Display_W("/F0//S1.0//jxcyc//C0000FF/+", tv_Min, Cf_Duration_Une_Trame);
+				STR_Display_W("/F0//S1.0//jxcyc//C0000FF/+", tv_Max, Cf_Duration_Une_Trame);
+				STR_Display_W("/F0//S1.0//jxcyc//C0000FF/+", cvector(tv_Min.x,tv_Max.y,0.0), Cf_Duration_Une_Trame);
+				STR_Display_W("/F0//S1.0//jxcyc//C0000FF/+", cvector(tv_Max.x,tv_Min.y,0.0), Cf_Duration_Une_Trame);
+			}
+		}
+	}
+	
+
+	return ti_Obj_IsOnScreen;
+}
+
+
+
+///TriggerTest_TriggerTestTimer float1 TimeFalseMin float2 TimeFalseMax float3 TimeTrueMin float4 TimeTrueMax int5 loop int4 inverse
+// TimeFalseMin - TimeFalseMax => Random pdt lequel le trigger est faux
+// TimeTrueMin - TimeTrueMax => Random pdt lequel le trigger est vrai
+// inverse => inverse le resultat
+// loop => boucle sur le trigger
+//
+// NB : Si on ne veut pas de random il suffit de mettre la même valeur pour Min et Max
+//function_trigger_global int TriggerTest_TriggerTestTimer(stock	&ref)
+//{
+//	DBG_TraceObj(0, SCR_ObjMe());
+//	DBG_TraceString(0, " ERROR, utilisez : TrigTest_Timer \n");
+//	DBG_Error(" ERROR:(GAO dans le log) utilisez : TrigTest_Timer \n");
+//		
+//	if (!ref.i32_1)
+//	{
+//		ref.f32_1 = MTH_FloatRand(ref.f32_1 , ref.f32_2);
+//		ref.i32_1 = true;
+//		ref.i32_2 = false;
+//		return false;
+//	}
+//	else
+//	{
+//		if (ref.f32_1 == 0.0) // TimeFalse Done
+//		{
+//			if (!ref.i32_2)
+//			{
+//				ref.f32_5 = MTH_FloatRand(ref.f32_3, ref.f32_4);
+//				ref.i32_2 = true;
+//				return true;
+//			}
+//			else
+//			{
+//				if (ref.f32_5 == 0.0) // TimeTrue Done
+//				{
+//					if (ref.i32_5) // Reinit values to start again
+//					{
+//						ref.i32_1 = false;
+//					}
+//					
+//					if (ref.i32_4) return true; else return false;	
+//				}
+//				else
+//				{
+//					ref.f32_5 -= MTH_FloatMin(TIME_GetDT(), ref.f32_5);
+//					if (ref.i32_4) return false; else return true;	
+//				}
+//			}
+//		}
+//		else
+//		{
+//			ref.f32_1 -= MTH_FloatMin(TIME_GetDT(), ref.f32_1);
+//			if (ref.i32_4) return true; else return false;	
+//		}
+//	}	
+//}
+
+
+///TrigTest_Timer float1 TimeFalseMin float2 TimeFalseMax float3 TimeTrueMin float4 TimeTrueMax int5 loop int4 inverse
+// TimeFalseMin - TimeFalseMax => Random pdt lequel le trigger est faux
+// TimeTrueMin - TimeTrueMax => Random pdt lequel le trigger est vrai
+// inverse => inverse le resultat
+// loop => boucle sur le trigger
+//
+// NB : Si on ne veut pas de random il suffit de mettre la même valeur pour Min et Max
+function_trigger_global int TrigTest_Timer(stock	&ref)
+{
+	if (!ref.i32_1)
+	{
+		ref.f32_1 = MTH_FloatRand(ref.f32_1 , ref.f32_2);
+		ref.i32_1 = true;
+		ref.i32_2 = false;
+		return false;
+	}
+	else
+	{
+		if (ref.f32_1 == 0.0) // TimeFalse Done
+		{
+			if (!ref.i32_2)
+			{
+				ref.f32_5 = MTH_FloatRand(ref.f32_3, ref.f32_4);
+				ref.i32_2 = true;
+				return true;
+			}
+			else
+			{
+				if (ref.f32_5 == 0.0) // TimeTrue Done
+				{
+					if (ref.i32_5) // Reinit values to start again
+					{
+						ref.i32_1 = false;
+					}
+					
+					if (ref.i32_4) return true; else return false;	
+				}
+				else
+				{
+					ref.f32_5 -= MTH_FloatMin(TIME_GetDT(), ref.f32_5);
+					if (ref.i32_4) return false; else return true;	
+				}
+			}
+		}
+		else
+		{
+			ref.f32_1 -= MTH_FloatMin(TIME_GetDT(), ref.f32_1);
+			if (ref.i32_4) return true; else return false;	
+		}
+	}	
+}
+
+///TrigTest_CountXS int1 i_NB_XS
+function_trigger_global int TrigTest_CountXS(stock	&ref)
+{
+	int ti_Count_Reached = false;
+	
+	if(@u i_collecte_item_count >= ref.i32_1)
+	{
+		ti_Count_Reached = true;
+	}
+	
+	return ti_Count_Reached;
+}
+
+///TrigExec_Teleport obj1 target obj2 dest
+// target : objet à téléporter
+// dest : destination
+function_trigger_global int TrigExec_Teleport(stock & ref)
+{
+	object		to_obj = SCR_MainActorGet(0);
+	
+	if (ref.po_Obj1 == to_obj)
+		DBG_TraceError(0,"Pour téléporter le _PJ_Caddie, utilisez le trigger local PJ_BUGROB_TrigTeleport !");
+
+	@o(ref.po_Obj1) OBJ_PosSetCut(@o(ref.po_Obj2) OBJ_PosGet());
+	return true;
+}
+
+///TrigExec_TeleportSight obj1 target obj2 dest
+// target : objet à téléporter
+// dest : destination
+function_trigger_global int TrigExec_TeleportSight(stock & ref)
+{
+	object		to_obj = SCR_MainActorGet(0);
+	
+	if (ref.po_Obj1 == to_obj)
+		DBG_TraceError(0,"Pour téléporter le _PJ_Caddie, utilisez le trigger local PJ_BUGROB_TrigTeleport !");
+
+	@o(ref.po_Obj1) OBJ_PosSetCut( @o(ref.po_Obj2) OBJ_PosGet());
+	@o(ref.po_Obj1) OBJ_SightSet( @o(ref.po_Obj2) OBJ_SightGet(), @o(ref.po_Obj2) OBJ_BankingGet());
+	return true;
+}
+
+///TrigExec_SendPAF obj1 o_Target obj2 o_Sender vec1 v_Dir int1 i_TypePAF float1 f_Damage int2 i_TypePaffer
+// i_TypePAF : type de PAF 
+//	C_PAF_Contact	1
+//	C_PAF_Bwaah	2
+//	C_PAF_Oil		4
+//	C_PAF_Mine		8
+//	C_PAF_Panic	16
+//	C_PAF_Freeze	32
+//	C_PAF_Rebond	64
+//	C_PAF_SBoost	128
+//--------------------------------------------------------
+// i_TypePaffer : type du paffer :
+// C_Paffer_Default = 2 
+//-------------------------------------------------------
+// o_Target : l'objet cible du PAF
+// o_Sender : l'objet qui envoie le PAF (par defaut, moi même)
+// f_Damage : valeur de damage (par defaut, mettre 1.0)
+function_trigger_global int TrigExec_SendPAF(stock &ref)
+{
+	// Target
+	if (!ref.po_Obj1)
+		DBG_Error("# TrigExec_SendPAF # Ce trigger doit obligatoirement avoir une target !");		
+		
+	// Sender
+	object to_Sender;
+	if (ref.po_Obj2)
+		to_Sender = ref.po_Obj2;	
+	else
+		to_Sender = SCR_ObjMe();
+		
+	// Dir
+	vector tv_DamageDir;
+	if (MTH_VecNull(ref.t_Vec1))
+		tv_DamageDir = @o(to_Sender) OBJ_SightGet();
+	else
+		tv_DamageDir = ref.t_Vec1;
+		
+	if (ref.f32_1 == 0.0)
+		DBG_TraceString(0, "# TrigExec_SendPAF # Attention vous envoyez un PAF avec un dommage nul\n");
+			
+	//vector tv_DamageDir = @o(ref.po_Obj1) OBJ_PosGet() - @o(SCR_ObjMe()) OBJ_PosGet();
+
+	CB_Paf_Send(@o(ref.po_Obj1) OBJ_MdfByRankGet(0), ref.i32_1, tv_DamageDir, ref.f32_1, to_Sender, 2);
+	return true;
+}
+
+
+
+///TrigExec_SendActivation obj1 o_Target obj2 o_Sender int1 i_Type
+// i_Type : type d'activation
+// Ci_ACTIVATE_ON			1
+// Ci_ACTIVATE_OFF		2
+// Ci_ACTIVATE_TOGGLE	3
+//-------------------------------------------------------
+// o_Target : l'objet que l'on veut activer
+// o_Sender : l'objet qui demande l'activation (par defaut, moi même)
+function_trigger_global int TrigExec_SendActivation(stock &ref)
+{
+	// Target
+	if (!ref.po_Obj1)
+		DBG_Error("# TrigExec_SendActivation # Ce trigger doit obligatoirement avoir une target !");
+		
+	modifier tmdf_Target = @o(ref.po_Obj1) OBJ_MdfByRankGet(0);
+	
+	if (!tmdf_Target)
+		DBG_Error("# TrigExec_SendActivation # L'objet sensé etre activé n'a pas de modifier !");
+		
+	// Sender
+	object to_Sender;
+	if (ref.po_Obj2)
+		to_Sender = ref.po_Obj2;	
+	else
+		to_Sender = SCR_ObjMe();
+
+	CB_Activate_Send(tmdf_Target, ref.i32_1, to_Sender);
+	return true;
+}
+
+
+
+///TrigExec_OBJ_MultipleCustomBits obj1 objet1 obj2 objet2 obj3 objet3 obj4 objet4 obj5 objet5 int1 bit_True int2 bit_False
+// bit_True  : bit de capa à passer à vrai
+// bit_False : bit de capa à passer à faux
+// objetN : objet dont les customs bits vont être modifiés
+function_trigger_global int TrigExec_OBJ_MultipleCustomBits(stock &ref)
+{
+	int		ti_result;
+	int 	ti_bits;
+	int		ti_i;
+	object	to_Objects[5];
+	
+	// get params
+	to_Objects[0] = ref.po_Obj1;
+	to_Objects[1] = ref.po_Obj2;  
+	to_Objects[2] = ref.po_Obj3; 
+	to_Objects[3] = ref.po_Obj4; 
+	to_Objects[4] = ref.po_Obj5; 
+	
+	// test first object
+	if(!to_Objects[0])
+		DBG_Error("il faut au moins un objet à tester");
+		
+	for (ti_i = 0; ti_i < 5; ti_i++)
+	{
+		if (to_Objects[ti_i])
+		{
+			@o(to_Objects[ti_i]) OBJ_CustomBitsSet(ref.i32_1, ref.i32_2);
+		}
+	}  
+	
+	return true;
+}
+
+ 
+
+///TrigTest_CustomBitInBV obj1 to_BV int1 ti_cb
+// to_BV la bv a tester
+// ti_cb custombit a tester
+function_trigger_global int TrigTest_CustomBitInBV(stock & ref)
+{
+	int ti_i;
+	object tao_obj[30];
+	int ti_nb = MDF_ZDE(ref.po_Obj1) ZDE_ZdePosGetAllOverlaps(&tao_obj[0],30,2);
+	for(ti_i=0;ti_i<ti_nb;ti_i++)
+	{
+		if(@o(tao_obj[ti_i])OBJ_CustomBitsTest(ref.i32_1))
+			return true;
+	}
+	return false;
+}
+
+
+///TrigTest_SNF_ActivatorInArea obj1 to_SNF int1 ti_Area int2 ti_ColID
+// Test si l'activator de to_SNF est dans la ti_Area, (renvoi vrai dans les zones
+// de bind de la ti_Area)
+//
+// to_SNF : Objet contenant le modifier SNF
+// ti_Area : Area a tester
+// ti_ColID : 0 ou 1 l'ID de colmap a tester
+function_trigger_global int TrigTest_SNF_ActivatorInArea(stock & ref)
+{
+	int ti_area;
+	int ti_bind;
+	modifier tm_snf = @o(ref.po_Obj1) OBJ_MDFGet(ViD_ENGTYPE_SoundFx, 0);
+
+	ti_area = @m(tm_snf) SNF_AreaGetExt(ref.i32_2);
+
+	if(ti_area == ref.i32_1)
+		return true;
+
+	if(ti_area == -1)
+	{
+		ti_bind = @m(tm_snf) SNF_BindGetExt(ref.i32_2);
+		if(@m(tm_snf) SNF_TargetGetExt(ref.i32_2,ti_bind,0) == ref.i32_1)
+			return true;
+		if(@m(tm_snf) SNF_TargetGetExt(ref.i32_2,ti_bind,1) == ref.i32_1)
+			return true;
+	}
+
+	return false;
+}
+
+///TrigExec_Univers_ValidateDome int1 domeID int2 launchHub
+// Unlock a specific dome in the universe
+//
+// domeID : dome ID to unlock
+// launchHub : do you want to launch the hub after this validation ?
+function_trigger_global int TrigExec_Univers_ValidateDome(stock & ref)
+{
+	Univers_ValidateDome(ref.i32_1,ref.i32_2);
+	return true;
+}
+
+///TrigExec_Univers_SetCurrentDome int1 domeID
+// Set current active dome in the universe
+//
+// domeID : current dome wanted
+function_trigger_global int TrigExec_Univers_SetCurrentDome(stock & ref)
+{
+	Univers_SetCurrentDome(ref.i32_1);
+	return true;
+}
+
+///TrigExec_Univers_SetWantedDome int1 domeID
+// Set current active dome you want in the universe
+//
+// domeID : current dome wanted
+function_trigger_global int TrigExec_Univers_SetWantedDome(stock & ref)
+{
+	Univers_SetWantedDome(ref.i32_1);
+	return true;
+}
+
+///TrigExec_Univers_SetMapFlag int1 flag
+// Set the map flag
+//
+// flag : flag wanted for the current map
+function_trigger_global int TrigExec_Univers_SetMapFlag(stock & ref)
+{
+	Univers_SetMapFlag(ref.i32_1);
+	return true;
+}
+
+///TrigExec_Univers_SetMapFinished
+// Set the map as finished
+//
+function_trigger_global int TrigExec_Univers_SetMapFinished(stock & ref)
+{
+	Map_CurrentFinished();
+	return true;
+}

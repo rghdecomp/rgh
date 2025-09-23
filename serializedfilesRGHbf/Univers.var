@@ -1,0 +1,334 @@
+//inherit model;
+track_init(0, "Univers_Init");
+//track_init(1, "Track");
+//track_init(2, "Track");
+//track_init(3, "Track");
+//track_init(4, "Track");
+
+private int				active_univers;
+
+// LOADING
+private int				loading_state;
+
+// ES
+private object			Jade_Pos;
+private object			Peyj_Pos;
+private object			HH_Pos;
+
+// PATH_LIBe
+private reinit int		PATH_LIB_Link_Touched;
+private reinit int		PATH_LIB_current_client_ID;
+private reinit int		PATH_LIB_new_client_ID;
+private reinit int		PATH_LIB_dodge_current_client_ID;
+private reinit int		PATH_LIB_dodge_new_client_ID;
+
+// NS
+key							WOR_NS_load_something;
+
+// CHEAT PAGE
+private int				i_CheatPage = 0;
+private int				i_CheatPage_BitField = 0;
+
+private reinit object	o_gst_global = SCR_CO_ObjNull;
+private reinit modifier	mdf_gst_global_script = SCR_CO_MdfNull;
+
+// MAPS ============================================
+struct struct_MAP
+{
+	int			m_ID;				// Id de la map
+	int			m_Key;				// Clef de la map en mode collecte
+	int			m_Key_TimeAttack;	// Clef de la map en mode Time Attack
+	wstring	m_Name;			// Nom de la map
+	int			m_Entrance;		// ES a utiliser
+	int			m_Flags;			// Flags
+};
+
+struct struct_MAP_SAVED
+{
+	int			m_NbXS;			// Nb d'XS collected
+	int			m_Reward;			// Reward obtenu (cbits)
+	float		m_timeAttack;
+	int			m_NbXS_TimeAttack;
+	int			m_finished;
+};
+
+		struct_MAP						MAP[100];
+		save(0) struct_MAP_SAVED		MAP_SAVED[100];
+
+		int		MAP_Counter = 0;
+		int 	MAP_Counter_Displayed = 0;
+
+		int		UNIV_LoadMap = -1;
+		int		UNIV_LoadMapOld = -1;
+		int		UNIV_LoadMapPrev = -1;
+		int		UNIV_LoadMapFlags;
+		
+		//	ajout de la notion d'ES
+		int		UNIV_LoadMapES = -1;			//	l'ID d'ES courant
+	
+		int		ai_LoadMapMask[200];
+		int		ai_LoadMapMaskCine[200];
+		int		ai_LoadMapMaskCine_FlushFlag;
+		
+#ifdef Ci_USE_WOG_LOADING
+	#ifdef _WiiChannel_
+		int		UNIV_LoadMapActiveWorldKey = 0x25101587;
+	#else
+		int		UNIV_LoadMapActiveWorldKey = 0x25100dd4;
+	#endif	
+#else		
+		int		UNIV_LoadMapActiveWorldKey = 0x25100bff;
+#endif		
+		
+// MAPS ============================================
+
+// GAME ============================================
+		int		i_mission_old = -1;
+		int		i_mission_current = -1;
+		int		i_mission_step[Ci_Mission_Nbr];
+		int		i_mission_flags[Ci_Mission_Nbr];
+
+		int		i_mission_CineDeb[Ci_Mission_Nbr];
+		int		i_mission_CineFin[Ci_Mission_Nbr];
+// GAME ============================================
+
+// BINKS ============================================
+struct struct_BINK
+{
+	int			m_ID;					// Id of the map
+	int			m_Enter_Bink_Key;		// Enter map Bink Key
+	int			m_Exit_Bink_Key;		// Exit map Bink Key
+	int			m_Flags;				// Flags
+};
+struct_BINK	BINK[100];
+int				BINK_Counter = 0;
+
+private int 	i_Univ_binkToPlay[2] = {-1, -1};
+private int 	i_Univ_binkCheck[2] = {false, false};
+private key	i_Univ_mapToLoad;
+private int 	i_ReadyToFlush;
+private int	i_flag_Bink;
+private int	i_flag_Flush;
+private int	i_Bink_Played = 0;
+private int	i_Bink_AutoSkip = false;
+
+private int 	i_activateNandPreload = true;
+// BINKS ============================================
+
+
+// Inventaire =====================
+struct item_struct
+{
+	string		nom;
+	string		desc;
+	int			icon;
+	int			flags;
+};
+
+private item_struct		ai_items_descr[Ci_itemID_Max];
+private int				ai_items[Ci_ID_Max][Ci_itemID_Max];
+private reinit object	o_gst_inventaire = SCR_CO_ObjNull;
+// Inventaire =====================
+
+// COMPAGNONS
+private reinit object	o_Sally = SCR_CO_ObjNull;
+private reinit object	o_Peyj = SCR_CO_ObjNull;
+private reinit object	o_HH = SCR_CO_ObjNull;
+private reinit object	o_Bunny = SCR_CO_ObjNull;
+private reinit object	o_Sally_NOX = SCR_CO_ObjNull;
+
+// YAMAKASY ITEMS
+private reinit object	ao_YAMA_obstacles[50];
+
+// Camera
+private reinit object	o_camera = SCR_CO_ObjNull;
+private reinit modifier	mdf_camera_script;
+private reinit object	o_cameras[2]; // A cause de BGE !!! :(
+
+// GST Order
+private reinit object	o_GST_Order = SCR_CO_ObjNull;
+
+// GST Radar
+private reinit object	o_GST_Radar = SCR_CO_ObjNull;
+
+// Localisation
+private reinit object	o_GST_Localisation = SCR_CO_ObjNull;
+private reinit modifier	mdf_GST_Localisation_script = SCR_CO_MdfNull;
+
+// Alarmes
+private reinit object	o_GST_Alarm = SCR_CO_ObjNull;
+private reinit modifier	mdf_GST_Alarm_script = SCR_CO_MdfNull;
+
+
+// Save manager
+private reinit object	o_GST_SaveManager = SCR_CO_ObjNull;
+
+
+// MODe OCNTROL
+private int	i_mode_control_Sally = 2; // Controle de merde.
+
+// NAV LIB
+private reinit int		NavWall_Type_nb = -1;
+private int				ai_NAV_Layers[10];
+
+// Bunnies Transport
+private int				i_Transport_ActifId = 0;
+
+/*
+__________________________________________
+
+ 			BUNNIES CUSTOMISATION
+__________________________________________
+
+*/
+STRUCT_CUSTO;
+STRUCT_STICKER;
+
+private save(0) s_custo	s_CustoStructure[3];	//MUST BE save(0,1)
+private save(0) fixedbuffer	buf_CustoJpeg[3];
+
+private int 		i_bufInit = 0;
+
+private save(1) s_custo	s_CustoFigurine;	
+private save(1) fixedbuffer	buf_FigurineJpeg;
+
+//private save(1) buffer 	buf_FigurineVignette;
+
+private object 			o_coiffure_manager;
+private int 				ai_CoifCorrespondance[CUSTO_NbCoiffures] = CUSTO_CoifCorrespondance;
+
+//private int				i_CustoActiveSlot;
+//private int				i_CustoActivStickers = false;
+//private s_sticker			s_CustoStickers[50][5];
+//private int				i_phase_custo;
+
+private objref 			o_custo_universe;
+
+
+/*
+__________________________________________
+
+ 			MENU
+__________________________________________
+*/
+
+/*
+__________________________________________
+
+ 			MENU
+__________________________________________
+*/
+private int				i_current_menu = 0;
+private reinit int 		i_ingame_menu_forbidden;
+private reinit int 		i_ingame_photo_forbidden;
+
+// FADE
+private 	vector			v_FadeColor;
+
+// Lit bulle transporté (FPP !)
+private objref			o_lit_bulle;
+
+// HP du PJ
+private save int			i_HP_PJ_Max = 3;
+private save int			i_DeblocagePowerUp = 3; // Charge SBoost interdites
+private int				i_nombre_de_mort;
+private int				i_nombre_de_paf;
+// Compteur de XS
+private save int			i_collecte_StackToTheMoon = 0;
+private reinit int		i_collecte_item_count; // Nombre d'objets XS collecté par les lapins
+private reinit int		i_collecte_item_count_Old;
+private int				ai_collecte_item_given_type[Ci_XS_MaxCount];
+private int				i_collecte_item_given; //soubasophone;
+
+private int				i_Score_P1 = 0;
+private int				i_Score_P2 = 0;
+private int				i_PlaytestPhoto_ID;
+
+// Index du mapping
+private int				i_joy_mapping;
+
+private int				i_zap_cine;
+private int				i_SaveIsEnable = true;
+
+private int				i_CheckInstallWiiChannel = false;
+
+/*
+__________________________________________
+
+ 					HUBS
+__________________________________________
+
+*/
+separator "HUBS MANAGER";
+int i_universeDefaultMapLoad = 1;
+private save int i_universeCurrentDome = 0;
+private save int i_universeValidatedDomes[C_HUB_NB_DOMES];
+private save int i_universeWantedDome = -1;
+private int i_universeMapFlag = 0;
+private int i_universeMapMode = C_MAP_MODE_COLLECTE;
+private int i_activateBink = true;
+private int i_universeJustValidated = false;
+
+private save(0) int i_UsedRewards[Ci_UnlockableRewards];
+
+struct Struct_Stickers
+{
+	fixedbuffer fbuf_Bitmap;			// Bitmap de l'image
+	fixedbuffer fbuf_Alpha;			// Alpha  de l'image
+};
+
+private save(2) Struct_Stickers StickerDLC[Ci_Stickers_Nbr];
+
+// Podium
+private save(0) int ai_votedPodium[3];// on ne peux voter qu'une fois.
+
+//	Tuto WCH
+private	separator	"Tuto";
+private	int					i_Tuto_Is_Displayed = false;
+private	int					i_Tuto_Is_Validated = false;
+private	float				f_Tuto_Validate_Time = 0.0;
+private	object				o_WCH_Dialog;
+
+/*
+__________________________________________
+
+ 			BUNNIES TUTORIALS
+__________________________________________
+
+*/
+private save(0) int i_tutorials_profil_flags = 0;	// Contains the list of viewed tutorials (saved in profil)
+private int i_tutorials_session_flags = 0;			// tutorials flags saved in the session (not in hard drive)
+
+private int 			i_SaveSlotCurrentID;
+private wstring 		ws_SaveSlotCurrentName;
+
+private int			i_NETWORK_Disable;
+private int			i_CanCreateSlot = false;
+
+
+private save(0) int i_DisplaySubTitle = false;
+
+/*
+___________________________________________
+
+            MINI GAME RECORDS
+___________________________________________
+*/
+private save(0) int i_izw_game_shaker_record = 10;
+private save(0) int i_izw_game_simon_record = 5;
+private save(0) int i_izw_game_mmaker_record = 0;
+
+private objref			or_Load;
+private int				i_MustSave = false;
+private int				i_GlobalMustBeInNewMap = false;
+private int				i_Menu_Cheat = false;
+private int i_SendMailMyself = false;
+private int				i_NoPadTRC;
+
+// NOUVELLES VARAIBLES TOUJOURS A LA FIN POUR PAS PETER LES SAVES
+private int i_mm_snd_reward;
+private int i_JoyEnable[2];
+
+
+private separator "Fade FX";
+private modifier mdf_AFX_Fade;

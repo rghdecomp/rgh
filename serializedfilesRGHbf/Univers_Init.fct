@@ -1,0 +1,22 @@
+MGM_SetActive(true);
+
+UNIV_Init();
+
+@u UNIV_LoadMap = 6;
+
+Bunnies_LanguageSet();
+
+IO_JoystickRequired(0, true);
+#ifdef _WiiChannel_
+IO_JoystickRequired(1, false);
+#else
+IO_JoystickRequired(1, true);
+#endif
+IO_JoystickRequired(2, false);
+IO_JoystickRequired(3, false);
+IO_JoystickExtensionRequired(0,IO_ExtensionType_WiiNunchuk);
+IO_JoystickExtensionRequired(1,IO_ExtensionType_None);
+IO_JoystickExtensionRequired(2,IO_ExtensionType_None);
+IO_JoystickExtensionRequired(3,IO_ExtensionType_None);
+IO_JoystickDisconnectionAlert(0,1);
+SCR_TrackCurChange("Univers_Loop");

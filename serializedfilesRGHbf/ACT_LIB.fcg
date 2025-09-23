@@ -1,0 +1,68 @@
+
+// -----------------
+// ANIMS INTERVALES
+// -----------------
+
+
+// Récupe la valeur de l intervale
+function int ACT_Inter_Get()
+{
+//	int ti_frame;
+	int ti_signal;
+	int ti_i;
+	int ti_return;
+	modifier tm_ACT;
+	
+	tm_ACT = OBJ_MDFGet(ViD_ENGTYPE_ACTions,0);
+	ti_return = 0;
+	for ( ti_i = Ci_Inter_ChannelMin; ti_i < Ci_Inter_ChannelMax; ti_i++)
+	{
+//		@m(tm_ACT) ACT_ActionSignalGet(ti_i,ti_frame,ti_signal);
+		ti_signal = @m(tm_ACT) ACT_CurSignalGet(ti_i);
+		ti_return += ti_signal;
+	}	
+	return ti_return;
+}
+
+// Teste  une valeur d'intervale
+function int ACT_Inter_Test(int Pi_Signal)
+{
+//	int ti_frame;
+	int ti_signal;
+	modifier tm_ACT;
+	
+	tm_ACT = OBJ_MDFGet(ViD_ENGTYPE_ACTions,0);
+
+//	@m(tm_ACT) ACT_ActionSignalGet(Ci_Inter_ChannelMin + Pi_Signal,ti_frame,ti_signal);
+	ti_signal = @m(tm_ACT) ACT_CurSignalGet(Ci_Inter_ChannelMin + Pi_Signal);
+	if ( Pi_Signal == ti_signal)
+		return true;
+	return false;
+}
+
+// recup la valeur d'un signal
+function int ACT_Inter_TrackGet(int Pi_Track)
+{
+//	int ti_frame;
+	int ti_signal;
+	modifier tm_ACT;
+	
+	tm_ACT = OBJ_MDFGet(ViD_ENGTYPE_ACTions,0);
+
+//	@m(tm_ACT) ACT_ActionSignalGet(Pi_Track,ti_frame,ti_signal);
+	ti_signal = @m(tm_ACT) ACT_CurSignalGet(Pi_Track);
+	return ti_signal;
+}
+
+#ifndef _PROJECT_WITHOUT_NOX_
+// Jouer exactement une anim avec NOX : en After Modifier Action
+function void ACT_NOX_AnimSpeedPlayExactly(modifier tm_NOX)
+{
+	vector tv_vec;
+	modifier tm_ACT;
+	
+	tm_ACT = OBJ_MDFGet(ViD_ENGTYPE_ACTions,0);
+	tv_vec = MTH_VecLocalToGlobal( @m( tm_ACT) ACT_MBMoveGet()) / TIME_GetDT();
+	@m(tm_NOX) NOX_ActorLinearVelocitySet(tv_vec);
+}
+#endif

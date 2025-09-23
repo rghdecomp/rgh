@@ -1,0 +1,2492 @@
+function vector MTH_LIB_VecMin(vector tv_A, vector tv_B)
+{
+	vector	tv_min;
+	tv_min.x = MTH_FloatMin(tv_A.x, tv_B.x);
+	tv_min.y = MTH_FloatMin(tv_A.y, tv_B.y);
+	tv_min.z = MTH_FloatMin(tv_A.z, tv_B.z);
+	return(tv_min);
+}
+function vector MTH_LIB_VecMax(vector tv_A, vector tv_B)
+{
+	vector	tv_max;
+	tv_max.x = MTH_FloatMax(tv_A.x, tv_B.x);
+	tv_max.y = MTH_FloatMax(tv_A.y, tv_B.y);
+	tv_max.z = MTH_FloatMax(tv_A.z, tv_B.z);
+	return(tv_max);
+}
+
+
+function int MTH_LIB_InPolygone(vector tv_O, vector *tav_pos, int ti_pos_nb)
+{
+	int   ti_i;
+	int   ti_left_cpt;
+	int   ti_right_cpt;
+	int   ti_up_cpt;
+	int   ti_down_cpt;
+	
+	vector tv_A;
+	vector tv_B;
+	vector tv_AB;
+	vector tv_AO;
+	vector tv_proj;
+	
+	ti_left_cpt = 0;
+	ti_right_cpt = 0;
+	ti_up_cpt = 0;
+	ti_down_cpt = 0;
+	
+	for (ti_i = 0; ti_i < ti_pos_nb; ti_i++)
+	{
+		tv_A = tav_pos[ti_i];
+		tv_B = tav_pos[MTH_IntModulo(ti_i + 1, ti_pos_nb)];
+		
+		tv_AB = tv_B - tv_A;
+		tv_AO = tv_O - tv_A;
+		
+		if (tv_O.y > MTH_FloatMin(tv_A.y, tv_B.y) && tv_O.y < MTH_FloatMax(tv_A.y, tv_B.y))
+		{
+			tv_proj = tv_A;
+			tv_proj += tv_AB * (tv_AO.y / tv_AB.y);
+			if (tv_proj.x > tv_O.x)
+				ti_right_cpt++;
+			else
+				ti_left_cpt++;
+		}
+		
+		if (tv_O.x > MTH_FloatMin(tv_A.x, tv_B.x) && tv_O.x < MTH_FloatMax(tv_A.x, tv_B.x))
+		{
+ 			tv_proj = tv_A;
+ 			tv_proj += tv_AB * (tv_AO.x / tv_AB.x);
+			if (tv_proj.y > tv_O.y)
+				ti_up_cpt++;
+			else
+				ti_down_cpt++;
+		}
+	}
+ 
+	if (MTH_IntModulo(ti_right_cpt, 2))
+  		return(true);
+ 	else if (MTH_IntModulo(ti_left_cpt, 2))
+  		return(true);
+  	else if (MTH_IntModulo(ti_up_cpt, 2))
+  		return(true);
+ 	else if (MTH_IntModulo(ti_down_cpt, 2))
+  		return(true);
+
+	return(false);
+}
+
+
+function int MTH_LIB_InTriangle(vector tv_A, vector tv_normale_A, vector tv_B, vector tv_normale_B, vector tv_C, vector tv_normale_C, vector tv_pos)
+{
+	float	tf_sign;
+	
+	tf_sign = MTH_FloatSign(MTH_VecDotProduct(tv_pos - tv_A, tv_normale_A));
+
+	if (tf_sign != MTH_FloatSign(MTH_VecDotProduct(tv_pos - tv_B, tv_normale_B)))
+		return(false);
+
+	if (tf_sign != MTH_FloatSign(MTH_VecDotProduct(tv_pos - tv_C, tv_normale_C)))
+		return(false);
+
+	return(true);
+}
+
+function int MTH_LIB_PointInTriangle(vector tv_M, vector tv_A, vector tv_B, vector tv_C, vector tv_N, int &ti_exit_value)
+{
+
+	DBG_TraceString(0, "MTH_LIB_PointInTriangle is Deprecated, use MTH_INT_PointInTriangle\n");
+	return(MTH_INT_PointInTriangle(tv_M, tv_A, tv_B, tv_C, tv_N));
+
+	float		tf_val;
+
+	vector 	tv_MA;
+	vector		tv_MB;
+	vector		tv_MC;
+
+	tv_MA = tv_A - tv_M;
+	tv_MB = tv_B - tv_M;
+	tv_MC = tv_C - tv_M;
+
+	#define Cf_InvSqr3	0.577350269189
+
+	if (MTH_FloatAbs(tv_N.z) > Cf_InvSqr3)
+	{
+		tf_val = (tv_MA.x * tv_MB.y) - (tv_MA.y * tv_MB.x);
+		if (MTH_FloatSign(tv_N.z) != MTH_FloatSign(tf_val))
+		{
+			if (ti_exit_value)
+				ti_exit_value = 0;
+			return(false);
+		}
+		else
+		{
+			tf_val = (tv_MB.x * tv_MC.y) - (tv_MB.y * tv_MC.x);
+			if (MTH_FloatSign(tv_N.z) != MTH_FloatSign(tf_val))
+			{
+				if (ti_exit_value)
+					ti_exit_value = 1;
+				return(false);
+			}
+			else
+			{
+				tf_val = (tv_MC.x * tv_MA.y) - (tv_MC.y * tv_MA.x);
+				if (MTH_FloatSign(tv_N.z) == MTH_FloatSign(tf_val))
+				{
+					return(true);
+				}
+				else
+				{
+					if (ti_exit_value)
+						ti_exit_value = 2;
+					return(false);
+				}
+			}
+		}
+	}
+	else if (MTH_FloatAbs(tv_N.y) > Cf_InvSqr3)
+	{
+		tf_val = (tv_MA.z * tv_MB.x) - (tv_MA.x * tv_MB.z);
+		if (MTH_FloatSign(tv_N.y) != MTH_FloatSign(tf_val))
+		{
+			if (ti_exit_value)
+				ti_exit_value = 0;
+			return(false);
+		}
+		else
+		{
+			tf_val = (tv_MB.z * tv_MC.x) - (tv_MB.x * tv_MC.z);
+			if (MTH_FloatSign(tv_N.y) != MTH_FloatSign(tf_val))
+			{
+				if (ti_exit_value)
+					ti_exit_value = 1;
+				return(false);
+			}
+			else
+			{
+				tf_val = (tv_MC.z * tv_MA.x) - (tv_MC.x * tv_MA.z);
+				if (MTH_FloatSign(tv_N.y) == MTH_FloatSign(tf_val))
+				{
+					return(true);
+				}
+				else
+				{
+					if (ti_exit_value)
+						ti_exit_value = 2;
+					return(false);
+				}
+			}
+		}
+	}
+	else
+	{
+		tf_val = (tv_MA.y * tv_MB.z) - (tv_MA.z * tv_MB.y);
+		if(MTH_FloatSign(tv_N.x) != MTH_FloatSign(tf_val))
+		{
+			if (ti_exit_value)
+				ti_exit_value = 0;
+			return(false);
+		}
+		else
+		{
+			tf_val = (tv_MB.y * tv_MC.z) - (tv_MB.z * tv_MC.y);
+			if(MTH_FloatSign(tv_N.x) != MTH_FloatSign(tf_val))
+			{
+				if (ti_exit_value)
+					ti_exit_value = 1;
+				return(false);
+			}
+			else
+			{
+				tf_val = (tv_MC.y * tv_MA.z) - (tv_MC.z * tv_MA.y);
+
+				if(MTH_FloatSign(tv_N.x) == MTH_FloatSign(tf_val))
+				{
+					return(true);
+				}
+				else
+				{
+					if (ti_exit_value)
+						ti_exit_value = 2;
+					return(false);
+				}
+			}
+		}
+	}
+#endif
+}
+
+function int MTH_LIB_InQuadrilatere(vector tv_A, vector tv_B, vector tv_C, vector tv_D, vector tv_pos, vector tv_normale, int ti_quadrilataire_type)
+{
+	// CA MARCHE AVEC LES QUADRILATAIRES CONVEXES, CONCAVES ET CROISES
+	int			ti_i;
+	int			ti_flag_in_quadrilataire	;
+	int			ti_concave_point_index;
+
+	float		tf_sign;
+	float		tf_point_sign[4];
+	float		tf_dot_product;
+
+	vector	tv_point[4];
+	vector	tv_cross_product[4];
+	vector	tav_triangle_sommet[3];
+	vector	tav_triangle_normale[3];
+
+	tv_point[0] = tv_A;
+	tv_point[1] = tv_B;
+	tv_point[2] = tv_C;
+	tv_point[3] = tv_D;
+
+#ifndef _FINAL_
+	tv_point[0] -= MTH_VecDotProduct(tv_point[0] - tv_pos, tv_normale) * tv_normale;
+	tv_point[1] -= MTH_VecDotProduct(tv_point[1] - tv_pos, tv_normale) * tv_normale;
+	tv_point[2] -= MTH_VecDotProduct(tv_point[2] - tv_pos, tv_normale) * tv_normale;
+	tv_point[3] -= MTH_VecDotProduct(tv_point[3] - tv_pos, tv_normale) * tv_normale;
+#endif
+
+	ti_flag_in_quadrilataire = true;
+
+	// CALCUL DES NORMALES
+	for (ti_i = 0; ti_i < 4; ti_i++)
+		tv_cross_product[ti_i] = MTH_VecCrossProduct(tv_point[MTH_IntModulo(ti_i + 1, 4)] - tv_point[ti_i], tv_normale);
+
+	// TYPE DU QUADRILATAIRE
+	switch(ti_quadrilataire_type)
+	{
+		case Ci_QUADRILATAIRE_CONVEXE :
+//		case 4 :
+			tf_sign = 4.0;
+			break;
+			
+		case Ci_QUADRILATAIRE_CONCAVE :
+//		case 2 :
+			tf_sign = 2.0;
+			break;
+		
+		case Ci_QUADRILATAIRE_CROISE :
+//		case 0 :
+			tf_sign = 0.0;
+			break;
+
+		default :
+			tf_sign = 0.0;
+			for (ti_i = 0; ti_i < 4; ti_i++)
+			{
+				tf_dot_product = MTH_VecDotProduct(tv_point[MTH_IntModulo(ti_i + 2, 4)] - tv_point[ti_i], tv_cross_product[ti_i]);
+				if (tf_dot_product > 0.0 )
+				{
+					tf_point_sign[ti_i] = MTH_FloatSign(tf_dot_product);
+					tf_sign += tf_point_sign[ti_i];
+				}
+				else
+				{
+					tf_point_sign[ti_i] = 0.0;
+				}
+			}
+	}
+	
+	if (MTH_FloatAbs(tf_sign) == 4.0)
+	{
+		// QUADRILATAIRE CONVEXE
+		for (ti_i = 0; ti_i < 4; ti_i++)
+		{
+			tf_dot_product = MTH_VecDotProduct(tv_pos - tv_point[ti_i], tv_cross_product[ti_i]);
+			if (tf_dot_product > 0.0 && !ti_i)
+				tf_sign = MTH_FloatSign(tf_dot_product);
+			else if (tf_sign != MTH_FloatSign(tf_dot_product))
+				ti_flag_in_quadrilataire = false;
+		}
+	}
+	else if (MTH_FloatAbs(tf_sign) == 2.0)
+	{
+		// QUADRILATAIRE CONCAVE
+		ti_flag_in_quadrilataire = false;
+	
+		tf_sign = MTH_FloatSign(tf_sign);
+	
+		// RECHERCHE DU POINT DE CONCAVITE
+		for (ti_i = 0; ti_i < 4; ti_i++)
+		{
+			if (tf_point_sign[ti_i] != tf_sign)
+			{
+				ti_concave_point_index = MTH_IntModulo(ti_i + 1, 4);
+				break;
+			}
+		}
+		
+//		DBG_RenderVector(tv_point[ti_concave_point_index], tv_normale * 5.0, color_rouge)
+		
+		// TEST DES DEUX TRIANGLES
+		tav_triangle_sommet[0] = tv_point[ti_concave_point_index];
+		tav_triangle_normale[0] = tv_cross_product[ti_concave_point_index];
+		
+		tav_triangle_sommet[1] = tv_point[MTH_IntModulo(ti_concave_point_index + 1, 4)];
+		tav_triangle_normale[1] = tv_cross_product[MTH_IntModulo(ti_concave_point_index + 1, 4)];
+		tav_triangle_sommet[2] = tv_point[MTH_IntModulo(ti_concave_point_index + 2, 4)];
+		tav_triangle_normale[2] = MTH_VecCrossProduct(tav_triangle_sommet[0] - tav_triangle_sommet[2], tv_normale);
+		if (MTH_LIB_InTriangle(tav_triangle_sommet[0], tav_triangle_normale[0], tav_triangle_sommet[1], tav_triangle_normale[1], tav_triangle_sommet[2], tav_triangle_normale[2], tv_pos))
+		{
+			ti_flag_in_quadrilataire = true;
+		}
+		else
+		{
+			tav_triangle_normale[0] = -tav_triangle_normale[2];
+			
+			tav_triangle_sommet[1] = tav_triangle_sommet[2];
+			tav_triangle_normale[1] = tv_cross_product[MTH_IntModulo(ti_concave_point_index + 2, 4)];
+	
+			tav_triangle_sommet[2] = tv_point[MTH_IntModulo(ti_concave_point_index + 3, 4)];
+			tav_triangle_normale[2] = tv_cross_product[MTH_IntModulo(ti_concave_point_index + 3, 4)];
+			if (MTH_LIB_InTriangle(tav_triangle_sommet[0], tav_triangle_normale[0], tav_triangle_sommet[1], tav_triangle_normale[1], tav_triangle_sommet[2], tav_triangle_normale[2], tv_pos))
+				ti_flag_in_quadrilataire = true;
+		}
+	}
+	else
+	{
+		// QUADRILATAIRE CROISE
+		ti_flag_in_quadrilataire = false;
+
+		// RECHERCHE DU POINT DE CROISEMENT
+		tf_sign = tf_point_sign[0];
+	
+		for (ti_i = 1; ti_i < 4; ti_i++)
+		{
+			if (tf_point_sign[ti_i] != tf_sign)
+			{
+				ti_concave_point_index = MTH_IntModulo(ti_i + 1, 4);
+				break;
+			}
+		}
+		
+		// TEST DES DEUX TRIANGLES
+		tav_triangle_sommet[0] = tv_point[ti_concave_point_index];
+		tav_triangle_normale[0] = tv_cross_product[ti_concave_point_index];
+		
+		tav_triangle_sommet[1] = tv_point[MTH_IntModulo(ti_concave_point_index + 1, 4)];
+		tav_triangle_normale[1] = tv_cross_product[MTH_IntModulo(ti_concave_point_index + 1, 4)];
+		tav_triangle_sommet[2] = tav_triangle_sommet[0];
+		tav_triangle_normale[2] = tv_cross_product[MTH_IntModulo(ti_concave_point_index + 3, 4)];
+		if (MTH_LIB_InTriangle(tav_triangle_sommet[0], tav_triangle_normale[0], tav_triangle_sommet[1], tav_triangle_normale[1], tav_triangle_sommet[2], tav_triangle_normale[2], tv_pos))
+		{
+			ti_flag_in_quadrilataire = true;
+		}
+		else
+		{
+			tav_triangle_normale[2] = tav_triangle_normale[1];
+			tav_triangle_sommet[1] = tv_point[MTH_IntModulo(ti_concave_point_index + 3, 4)];
+			tav_triangle_normale[1] = tv_cross_product[MTH_IntModulo(ti_concave_point_index + 3, 4)];
+			tav_triangle_sommet[0] = tv_point[MTH_IntModulo(ti_concave_point_index + 2, 4)];
+			tav_triangle_normale[0] = tv_cross_product[MTH_IntModulo(ti_concave_point_index + 2, 4)];
+			tav_triangle_sommet[2] = tav_triangle_sommet[0];
+
+			if (MTH_LIB_InTriangle(tav_triangle_sommet[0], tav_triangle_normale[0], tav_triangle_sommet[1], tav_triangle_normale[1], tav_triangle_sommet[2], tav_triangle_normale[2], tv_pos))
+				ti_flag_in_quadrilataire = true;
+		}
+	}
+#ifndef _FINAL_
+//	if (AI_GetCurSystem() == 10) 
+	{
+		for (ti_i = 0; ti_i < 4; ti_i++)
+		{
+			if (ti_flag_in_quadrilataire)
+				DBG_RenderVector(tv_point[ti_i], tv_point[MTH_IntModulo(ti_i + 1, 4)] - tv_point[ti_i], color_vert);
+			else
+				DBG_RenderVector(tv_point[ti_i], tv_point[MTH_IntModulo(ti_i + 1, 4)] - tv_point[ti_i], color_rouge);
+		}
+	
+		if (ti_flag_in_quadrilataire)
+			DBG_RenderVector(tv_pos, tv_normale * 5.0, color_vert);
+	}
+#endif
+	return(ti_flag_in_quadrilataire);
+}
+
+
+function vector MTH_LIB_VectorInPrisme(vector tv_vector, vector tv_cone_dir, vector tv_prisme_Z_dir, float tf_angle_limit)
+{
+	float		tf_angle;
+	vector 	tv_hor_dir;
+	
+	tv_hor_dir = tv_vector;
+	tv_hor_dir -= MTH_VecDotProduct(tv_vector, tv_prisme_Z_dir) * tv_prisme_Z_dir;
+	
+	tf_angle = MTH_VecAngle(tv_hor_dir, tv_cone_dir, tv_prisme_Z_dir);
+	
+	if (MTH_FloatAbs(tf_angle) > tf_angle_limit)
+	{
+		tf_angle = MTH_FloatSign(tf_angle) * (tf_angle_limit - MTH_FloatAbs(tf_angle));
+		tv_vector = MTH_VecRotate(tv_vector, tf_angle, tv_prisme_Z_dir);
+	}
+	
+	return(tv_vector);
+}
+
+function float MTH_LIB_ZoneInCone(vector tv_start_pos, vector tv_sight, float tf_cos_angle, float tf_dist_max, vector tv_dest_pos, float tf_zone_rayon, int ti_flag_2D, float &tf_dot_product, int ti_color_cone, int ti_color_sphere)
+{
+	int			ti_i;
+	float		tf_dist;
+	float		tf_Adj;
+	float		tf_Opp;
+	float		tf_Hyp;
+	float		tf_val;
+	float		tf_norm;
+	float		tf_sqr_dist;
+	vector	tv_start_to_dest;
+	vector	tv_dir;
+	vector	tv_cone_limit;
+	vector	tv_horizon;
+	vector	tv_projection;
+	vector	tv_render_cone;
+	vector	tv_pos_A;
+	vector	tv_pos_B;
+	vector	tv_pos_C;
+	
+	if (ti_flag_2D)
+	{
+		tv_dest_pos.z = tv_start_pos.z;
+		tv_sight.z = 0.0;
+		tf_norm = MTH_VecNorm(tv_sight);
+		if (tf_norm < 0.0001)
+			return(0.0);
+			
+		tv_sight /= tf_norm;
+	}
+#ifndef _FINAL_
+//	if (AI_GetCurSystem() == 10)
+	{
+		if (ti_color_sphere)
+			DBG_RenderSphere(tv_dest_pos, tf_zone_rayon, ti_color_sphere);
+	
+		if (ti_color_cone)
+		{
+//			DBG_RenderCone(tv_start_pos, tv_sight * tf_dist_max, MTH_ACos(tf_cos_angle), ti_color_cone)
+	
+			tv_render_cone = MTH_VecCrossProduct(tv_sight, Cv_VerticalVector);
+			if (MTH_VecDotProduct(tv_render_cone, tv_render_cone) > 0.0 )
+			{
+				tv_render_cone = MTH_VecRotate(tv_sight, MTH_FloatACos(tf_cos_angle), tv_render_cone) * tf_dist_max;
+			}
+			else
+			{
+				tv_render_cone = MTH_VecCrossProduct(tv_sight, cvector(1.0, 0.0, 0.0));
+				tv_render_cone = MTH_VecRotate(tv_sight, MTH_FloatACos(tf_cos_angle), tv_render_cone) * tf_dist_max;
+			}
+			
+			tv_pos_C = tv_start_pos;
+			tv_pos_C += tv_sight * tf_dist_max;
+	
+			tv_pos_A = tv_start_pos;
+			tv_pos_A += tv_render_cone;
+
+			for (ti_i = 0; ti_i < 15; ti_i++)
+			{
+				DBG_RenderVector(tv_pos_C, tv_pos_A - tv_pos_C, ti_color_cone);
+				DBG_RenderVector(tv_start_pos, tv_render_cone, ti_color_cone);
+				tv_render_cone = MTH_VecRotate(tv_render_cone, Cf_2Pi / 15.0, tv_sight);
+				tv_pos_B = tv_start_pos;
+				tv_pos_B += tv_render_cone;
+				DBG_RenderVector(tv_pos_A, tv_pos_B - tv_pos_A, ti_color_cone);
+				tv_pos_A = tv_pos_B;
+			}
+		}
+	}
+#endif	
+
+	tv_start_to_dest = tv_dest_pos;
+	tv_start_to_dest -= tv_start_pos;
+	
+	tf_sqr_dist = MTH_VecSqrNorm(tv_start_to_dest);
+	if (tf_sqr_dist <= tf_zone_rayon * tf_zone_rayon)
+	{
+		// INTERSECTION DIRECTE
+		tf_dist = MTH_FloatSqrt(tf_sqr_dist);
+		
+		if (tf_dist > 0.0 )
+		{
+			tv_dir = tv_start_to_dest / tf_dist;
+			tf_dot_product = MTH_VecDotProduct(tv_sight, tv_dir);
+		}
+		else
+		{
+			tf_dot_product = -1.0;
+		}
+		return(0.00001 + tf_dist);
+	}
+	else if (tf_sqr_dist <= (tf_dist_max + tf_zone_rayon) * (tf_dist_max + tf_zone_rayon))
+	{
+		// PAS TROP LOIN
+		tf_dist = MTH_FloatSqrt(tf_sqr_dist);
+		tv_dir = tv_start_to_dest / tf_dist;
+		
+		tf_dot_product = MTH_VecDotProduct(tv_sight, tv_dir);
+		if (tf_dot_product >= tf_cos_angle)
+		{
+			// OK, C'EST DANS LE CONE*
+			return(0.00001 + tf_dist);
+		}
+		else if (tf_zone_rayon > 0.0 )
+		{
+			// ON N'EST PAS DANS LE CONE
+			if (tf_cos_angle > 0.0 )
+			{
+				// ON VA CONSTRUIRE LE VECTEUR QUI CORRESPOND A LA LIMITE DU CONE
+				tv_horizon = MTH_VecCrossProduct(tv_sight, tv_dir);
+				tv_horizon = MTH_VecCrossProduct(tv_sight, tv_horizon);
+				MTH_VecSetNormalize(tv_horizon);
+	
+				tf_Adj = MTH_FloatAbs(MTH_VecDotProduct(tv_start_to_dest, tv_sight));
+				
+				tf_val = tf_Adj * tf_Adj;
+				tf_val = MTH_FloatSqrt((tf_val / (tf_cos_angle * tf_cos_angle)) - tf_val);
+				
+				tv_cone_limit = tv_sight * tf_Adj;
+				tv_cone_limit -= tf_val * tv_horizon;
+				MTH_VecSetNormalize(tv_cone_limit);
+	
+				tv_projection = tv_start_pos;
+				tv_projection += MTH_FloatMax(MTH_VecDotProduct(tv_start_to_dest, tv_cone_limit), 0.0) * tv_cone_limit;
+				tv_projection -= tv_dest_pos;
+			
+				// DISTANCE AU CARRE ENTRE LE CONE ET LE POINT DEST
+				tf_sqr_dist = MTH_VecSqrNorm(tv_projection);
+			}
+			else
+			{
+				// DISTANCE AU CARRE ENTRE LE CONE ET LE POINT DEST
+				tf_sqr_dist = MTH_VecDotProduct(tv_start_to_dest, -tv_sight);
+				tf_sqr_dist *= tf_sqr_dist;
+			}
+			
+			if (tf_sqr_dist <= tf_zone_rayon * tf_zone_rayon)
+			{
+				// INTERSECTION
+				return(0.00001 + tf_dist);
+			}
+		}
+	}
+	return(0.0);
+}
+
+
+// BEZIER
+function vector MTH_LIB_Bezier_Pos_Get(float tf_coef, vector tv_point_A, vector tv_point_B, vector tv_point_C, vector tv_point_D, vector &tv_sight)
+{
+	if (tf_coef <= 0.0)
+	{
+		tv_sight = tv_point_B - tv_point_A;
+		return(tv_point_A);
+	}
+	
+	if (tf_coef >= 1.0)
+	{
+		tv_sight = tv_point_D - tv_point_C;
+		return(tv_point_D);
+	}
+	tv_point_A += (tv_point_B - tv_point_A) * tf_coef;
+	tv_point_B += (tv_point_C - tv_point_B) * tf_coef;
+	tv_point_C += (tv_point_D - tv_point_C) * tf_coef;
+	tv_point_A += (tv_point_B - tv_point_A) * tf_coef;
+	tv_point_B += (tv_point_C - tv_point_B) * tf_coef;
+	tv_sight = tv_point_B - tv_point_A;
+	tv_point_A += tv_sight * tf_coef;
+	return(tv_point_A);
+}
+
+
+function float MTH_LIB_Bezier_Find_Move_Coef(float tf_norm, int ti_iteration_nb, vector tv_point_A, vector tv_point_B, vector tv_point_C, vector tv_point_D)
+{
+	int			ti_i;
+
+	float		tf_coef;
+	float		tf_borne_min;
+	float		tf_borne_max;
+	float		tf_sqr_norm;
+	float		tf_sqr_dist;
+
+	vector		tv_move;
+	vector		tv_temp;
+
+	if (tf_norm == 0.0)
+		return(0.0);
+
+	tf_borne_min = 0.0;
+	tf_borne_max = 1.0;
+	tf_sqr_norm = tf_norm;
+	tf_sqr_norm *= tf_sqr_norm;
+	tv_temp = tv_point_D;
+	tv_temp -= tv_point_A;
+
+	if (MTH_VecDotProduct(tv_temp, tv_temp) <= tf_sqr_norm)
+		return(1.0);
+
+	ti_i = 0;
+	while(	ti_i < ti_iteration_nb)
+	{
+		ti_i++;
+		
+		tf_coef = tf_borne_min;
+		tf_coef += (tf_borne_max - tf_borne_min) * 0.5;
+		
+		tv_move = MTH_LIB_Bezier_Pos_Get(tf_coef, tv_point_A, tv_point_B, tv_point_C, tv_point_D, tv_temp);
+		tv_move -= tv_point_A;
+		
+		tf_sqr_dist = MTH_VecSqrNorm(tv_move);
+		if (tf_sqr_dist > tf_sqr_norm)
+			tf_borne_max = tf_coef;
+		else
+			tf_borne_min = tf_coef;
+	}
+	return(tf_coef);
+}
+
+
+
+function float MTH_LIB_Bezier_Find_Move_Coef2(vector tv_start_pos, float tf_start_coef, float tf_norm, int ti_iteration_nb, vector tv_point_A, vector tv_point_B, vector tv_point_C, vector tv_point_D)
+{
+	int			ti_i;
+
+	float		tf_coef;
+	float		tf_borne_min;
+	float		tf_borne_max;
+	float		tf_sqr_norm;
+	float		tf_sqr_dist;
+
+	vector		tv_move;
+	vector		tv_temp;
+
+	if (tf_norm == 0.0)
+		return(0.0);
+
+	tf_borne_min = tf_start_coef;
+	tf_borne_max = 1.0;
+	tf_sqr_norm = tf_norm;
+	tf_sqr_norm *= tf_sqr_norm;
+
+	tv_temp = tv_point_D;
+	tv_temp -= tv_point_A;
+
+	if (MTH_VecSqrNorm(tv_temp) <= tf_sqr_norm)
+		return(1.0);
+
+	ti_i = 0;
+	while(	ti_i < ti_iteration_nb)
+	{
+		ti_i++;
+		
+		tf_coef = tf_borne_min;
+		tf_coef += (tf_borne_max - tf_borne_min) * 0.5;
+		
+		tv_move = MTH_LIB_Bezier_Pos_Get(tf_coef, tv_point_A, tv_point_B, tv_point_C, tv_point_D, tv_temp);
+		tv_move -= tv_start_pos;
+		
+		tf_sqr_dist = MTH_VecSqrNorm(tv_move);
+		if (tf_sqr_dist > tf_sqr_norm)
+			tf_borne_max = tf_coef;
+		else
+			tf_borne_min = tf_coef;
+	}
+	return(tf_coef);
+}
+
+
+
+// A BEZIER
+function vector MTH_LIB_A_Bezier_Pos_Get(float tf_coef, float tf_B_weight, float tf_C_weight, vector tv_point_A, vector tv_point_B, vector tv_point_C, vector tv_point_D)
+{
+	float	tf_WResult1;
+	float	tf_WResult2;
+	float	tf_WResult3;
+	
+	if (tf_coef <= 0.0)
+		return(tv_point_A);
+	
+	if (tf_coef >= 1.0)
+		return(tv_point_D);
+		
+	tf_WResult1 = 1.0 + ((tf_B_weight - 1.0) * tf_coef);
+	tf_WResult2 = tf_B_weight + ((tf_C_weight - tf_B_weight) * tf_coef);
+	tf_WResult3 = tf_C_weight + ((1.0 - tf_C_weight) * tf_coef);
+
+	tf_WResult1 += (tf_WResult2 - tf_WResult1) * tf_coef;
+	tf_WResult2 += (tf_WResult3 - tf_WResult2) * tf_coef;
+	tf_WResult1 += (tf_WResult2 - tf_WResult1) * tf_coef;
+
+	tv_point_B *= tf_B_weight;
+	tv_point_C *= tf_C_weight;
+
+	tv_point_A += (tv_point_B - tv_point_A) * tf_coef;
+	tv_point_B += (tv_point_C - tv_point_B) * tf_coef;
+	tv_point_C += (tv_point_D - tv_point_C) * tf_coef;
+
+	tv_point_A += (tv_point_B - tv_point_A) * tf_coef;
+	tv_point_B += (tv_point_C - tv_point_B) * tf_coef;
+
+	tv_point_A += (tv_point_B - tv_point_A) * tf_coef;
+
+	tv_point_A *= 1.0 / tf_WResult1;
+	
+	return(tv_point_A);
+}
+
+
+function void MTH_LIB_Bezier_Display(int ti_nb_segment, vector tv_point_A, vector tv_point_B, vector tv_point_C, vector tv_point_D, int ti_color)
+{
+#ifndef _FINAL_
+	int			ti_i;
+
+	float		tf_coef;
+	float		tf_step;
+	
+	vector		tv_start_pos;
+	vector		tv_dest_pos;
+	vector		tv_sight;
+	vector		tv_temp;
+
+//	if (AI_GetCurSystem() != 10)
+//		return
+
+	tf_step = 1.0;
+	tf_step /= ti_nb_segment;
+	tv_start_pos = tv_point_A;
+
+//	DBG_RenderVector(tv_point_A, tv_point_B - tv_point_A, color_jaune)
+//	DBG_RenderVector(tv_point_C, tv_point_D - tv_point_C, color_jaune)
+	for (ti_i = 1; ti_i < ti_nb_segment; ti_i++)
+	{
+		tf_coef = ti_i * tf_step;
+		tv_dest_pos = MTH_LIB_Bezier_Pos_Get(tf_coef, tv_point_A, tv_point_B, tv_point_C, tv_point_D, tv_sight);
+		DBG_RenderVector(tv_start_pos, tv_dest_pos - tv_start_pos, ti_color);
+//		tv_temp	= MTH_VecBlend(tv_point_A, tv_point_D, tf_coef)
+//		DBG_RenderVector(tv_temp, tv_dest_pos - tv_temp, color_rouge)
+		tv_start_pos = tv_dest_pos;
+	}
+
+	DBG_RenderVector(tv_dest_pos, tv_point_D - tv_dest_pos, ti_color);
+
+#endif
+}
+
+
+function void MTH_LIB_A_Bezier_Display(int ti_nb_segment, float tf_B_weight, float tf_C_weight, vector tv_point_A, vector tv_point_B, vector tv_point_C, vector tv_point_D)
+{
+	int			ti_i;
+	float		tf_coef;
+	float		tf_step;
+	
+	vector	tv_start_pos;
+	vector	tv_dest_pos;
+
+//	if (AI_GetCurSystem() != 10)
+//		return
+	
+	tf_step = 1.0;
+	tf_step /= ti_nb_segment;
+	tv_start_pos = tv_point_A;
+	tv_dest_pos = tv_start_pos;
+
+	for (ti_i = 1; ti_i <= ti_nb_segment; ti_i++)
+	{
+		tf_coef = ti_i * tf_step;
+		tv_start_pos = tv_dest_pos;
+		tv_dest_pos = MTH_LIB_A_Bezier_Pos_Get(tf_coef, tf_B_weight, tf_C_weight, tv_point_A, tv_point_B, tv_point_C, tv_point_D);
+		DBG_RenderVector(tv_start_pos, tv_dest_pos - tv_start_pos, color_rouge);
+	}
+}
+
+
+// ============================================================
+// RETOURNE LE POINT D'INTERSECTION ENTRE UNE LIGNE ET UN PLAN
+// ============================================================
+function int MTH_LIB_Intersection_Line_Plane(vector tv_start_pos, vector tv_dir, vector tv_plan_pos, vector tv_plan_normale, float &tf_dist, vector &tv_collide_pos)
+{
+	tf_dist = MTH_VecDotProduct(tv_dir, tv_plan_normale);
+
+	if (tf_dist == 0.0 )
+		return(false);
+
+	tf_dist = - MTH_VecDotProduct(tv_start_pos - tv_plan_pos, tv_plan_normale) / tf_dist;
+	tv_collide_pos = tv_start_pos;
+	tv_collide_pos += tf_dist * tv_dir;
+ 
+	return(true);
+}
+
+
+// ============================================================
+// RETOURNE LE POINT D'INTERSECTION ENTRE UNE DIRECTION ET UN PLAN
+// ============================================================
+function int MTH_LIB_Intersection_Dir_Plane(vector tv_start_pos, vector tv_dir, vector tv_plan_pos, vector tv_plan_normale, float &tf_dist, vector &tv_collide_pos)
+{
+	if (MTH_LIB_Intersection_Line_Plane(tv_start_pos, tv_dir, tv_plan_pos, tv_plan_normale, tf_dist, tv_collide_pos))
+	{
+		if (tf_dist >= 0.0)
+			return(true);
+		else
+			return(false);
+	}
+	else
+	{
+		return(false);
+	}
+}
+
+
+// ====================================================================
+// RETOURNE LE POINT D'INTERSECTION ENTRE UNE DIRECTION ET UN PLAN ORIENTE
+// ====================================================================
+function int MTH_LIB_Intersection_Dir_Oriented_Plane(vector tv_start_pos, vector tv_dir, vector tv_plan_pos, vector tv_plan_normale, float &tf_dist, vector &tv_collide_pos)
+{
+	tf_dist = MTH_VecDotProduct(tv_dir, tv_plan_normale);
+	if (tf_dist >= 0.0)
+		return(false);
+		
+	tf_dist = - MTH_VecDotProduct(tv_start_pos - tv_plan_pos, tv_plan_normale) / tf_dist;
+	tv_collide_pos = tv_start_pos;
+	tv_collide_pos += tf_dist * tv_dir;
+ 
+	if (tf_dist >= 0.0)
+		return(true);
+	else
+		return(false);
+}
+
+
+// =======================================================================================
+// RETOURNE LE POINT D'INTERSECTION ENTRE UNE DIRECTION ET UNE FACE REALTIME RENDERING p. 305
+// =======================================================================================
+function int MTH_LIB_IntersectionDirTriangle(vector tv_O, vector tv_D, vector tv_V0, vector tv_V1, vector tv_V2, float &tf_T, vector &tv_collide_pos)
+{
+	float		tf_a;
+	float		tf_f;
+	float		tf_U;
+	float		tf_V;
+	
+	vector	tv_e1;
+	vector	tv_e2;
+	vector	tv_P;
+	vector	tv_S;
+	vector	tv_Q;
+
+	tv_e1 = tv_V1 - tv_V0;
+	tv_e2 = tv_V2 - tv_V0;
+	
+	tv_P = MTH_VecCrossProduct(tv_D, tv_e2);
+	
+	tf_a = MTH_VecDotProduct(tv_e1, tv_P);
+	
+//	if (MTH_FloatNullEpsilon(tf_a))	
+	if (MTH_FloatAbs(tf_a) < Cf_Epsilon)	
+		return(false);
+		
+	tf_f = 1.0 / tf_a;
+	tv_S = tv_O - tv_V0;
+	
+	tf_U = tf_f * MTH_VecDotProduct(tv_S, tv_P);
+	if (tf_U < 0.0 || tf_U > 1.0)	
+		return(false);
+		
+	tv_Q = MTH_VecCrossProduct(tv_S, tv_e1);
+	
+	tf_V = tf_f * MTH_VecDotProduct(tv_D, tv_Q);
+	
+	if (tf_V < 0.0 || tf_U+ tf_V > 1.0)
+		return(false);
+		
+	tf_T = tf_f * MTH_VecDotProduct(tv_e2, tv_Q);
+	
+	tv_collide_pos = tv_O;
+	tv_collide_pos += tf_T * tv_D;
+	
+	return(true);
+}
+
+// Intersection de deux droites du plan z = 0
+function vector MTH_LIB_Intersection_Line_Line_2D(vector tv_pos1, vector tv_dir1, vector tv_pos2, vector tv_dir2)
+{
+	float		ta, tb, tap, tbp;
+	vector		tv_vec, tv_pos, tv_result;
+	
+	if (!MTH_FloatNullEpsilon(tv_dir1.x))
+	{
+		MTH_VecHorzSet_SqrNormGet(tv_dir1);
+		ta = tv_dir1.y / tv_dir1.x;
+		tb = tv_pos1.y - (ta * tv_pos1.x);
+	}
+	else
+		tv_dir1.x = 0.0;
+	
+	if (!MTH_FloatNullEpsilon(tv_dir2.x))
+	{
+		MTH_VecHorzSet_SqrNormGet(tv_dir2);
+		tap = tv_dir2.y / tv_dir2.x;
+		tbp = tv_pos2.y - (tap * tv_pos2.x);
+	}
+	else
+		tv_dir2.x = 0.0;
+
+	if (tv_dir1.x == 0.0)
+	{
+		if (tv_dir2.x == 0.0)
+			tv_result = Cv_NullVector;
+		else
+		{
+			tv_result.x = tv_pos1.x;
+			tv_result.y = (tap * tv_result.x) + tbp;
+		}
+	}
+	else if (tv_dir2.x == 0.0)
+	{
+		tv_result.x = tv_pos2.x;
+		tv_result.y = (ta * tv_result.x) + tb;
+	}
+	else if (MTH_FloatNullEpsilon(ta - tap))
+	{
+		tv_result = Cv_NullVector;
+	}
+	else
+	{
+		tv_result.x = (tbp - tb) / (ta - tap);
+		tv_result.y = (ta * tv_result.x) + tb;
+		tv_result.z = tv_pos2.z;
+	}
+
+	return tv_result;
+}
+
+// =======================================================================================
+// COLLISION CYLINDRE POS
+// =======================================================================================
+function vector MTH_LIB_Nearest_Cylinder_Pos(vector tv_cylinder_pos, vector tv_axis, float tf_size_min, float tf_size_max, float tf_rayon, vector tv_start_pos)
+{
+	float	tf_dist;
+	float	tf_dot_product;
+
+	vector tv_nearest_pos;
+
+	tv_nearest_pos = tv_start_pos;
+	tv_nearest_pos -= tv_cylinder_pos;
+	
+	tf_dot_product = MTH_VecDotProduct(tv_nearest_pos, tv_axis);
+	tv_nearest_pos -= tf_dot_product * tv_axis;
+	tf_dot_product = MTH_FloatLimit(tf_dot_product, tf_size_min, tf_size_max);
+	tf_dist = MTH_VecDotProduct(tv_nearest_pos, tv_nearest_pos);
+	if (tf_dist > tf_rayon * tf_rayon)
+	{
+		tf_dist = MTH_FloatSqrt(tf_dist);
+		tv_nearest_pos /= tf_dist;
+		tv_nearest_pos *= tf_rayon;
+	}
+	tv_nearest_pos += tf_dot_product * tv_axis;
+	tv_nearest_pos += tv_cylinder_pos;
+
+	return(tv_nearest_pos);
+}
+
+
+function int MTH_LIB_2D_COL_WhichSide(vector *vertices, int ti_vertex_nb, vector tv_dir, vector tv_pos)
+{
+	int		ti_i;
+	int		ti_positive;
+	int		ti_negative;
+	
+	float	tf_dot_product;
+
+	ti_positive = 0;
+	ti_negative = 0;
+
+	for (ti_i = 0; ti_i < ti_vertex_nb; ti_i++)
+	{
+		tf_dot_product = MTH_VecDotProduct(tv_dir, vertices[ti_i] - tv_pos);
+		if (tf_dot_product > 0.0)
+			ti_positive++;
+		else if (tf_dot_product < 0.0)
+			ti_negative++;
+			
+		if (ti_positive && ti_negative)
+			return(0);
+	}
+	
+	if (ti_positive)	
+		return(1);
+	else
+		return(-1);
+}
+
+
+function int MTH_LIB_2D_COL_Intersection(vector *Polygon_A, int vertex_A_nb, vector *Polygon_B, int vertex_B_nb)
+{	
+	int			ti_i;
+	int			ti_k;
+	
+	vector	tv_normale;
+	
+	ti_k = vertex_A_nb - 1;
+	for (ti_i = 0; ti_i < vertex_A_nb; ti_i++)
+	{
+		tv_normale = Polygon_A[ti_i] - Polygon_A[ti_k];
+		tv_normale.z = tv_normale.x;
+		tv_normale.x = tv_normale.y;
+		tv_normale.y = -tv_normale.z;
+		tv_normale.z = 0.0;
+	
+		if (MTH_LIB_2D_COL_WhichSide(&Polygon_B[0], vertex_B_nb, tv_normale, Polygon_A[ti_i]) > 0)
+			return(false);
+
+		ti_k = ti_i;
+	}
+
+	ti_k = vertex_B_nb - 1;
+	for (ti_i = 0; ti_i < vertex_B_nb; ti_i++)
+	{
+		tv_normale = Polygon_B[ti_i] - Polygon_B[ti_k];
+		tv_normale.z = tv_normale.x;
+		tv_normale.x = tv_normale.y;
+		tv_normale.y = -tv_normale.z;
+		tv_normale.z = 0.0;
+	
+		if (MTH_LIB_2D_COL_WhichSide(&Polygon_A[0], vertex_A_nb, tv_normale, Polygon_B[ti_i]) > 0)
+			return(false);
+
+		ti_k = ti_i;
+	}
+
+	return(true);
+}
+
+
+function void MTH_LIB_COL_3D_To_2D(vector *vertices, int ti_vertex_nb, vector tv_O, vector tv_X_axis, vector tv_Y_axis)
+{
+	int			ti_i;
+	
+	vector	tv_3D_pos;
+	vector	tv_2D_pos;
+
+	tv_2D_pos.z = 0.0;
+	for (ti_i = 0; ti_i < ti_vertex_nb; ti_i++)
+	{
+		tv_3D_pos = vertices[ti_i];
+		tv_2D_pos.x = MTH_VecDotProduct(tv_3D_pos - tv_O, tv_X_axis);
+		tv_2D_pos.y = MTH_VecDotProduct(tv_3D_pos - tv_O, tv_Y_axis);
+		vertices[ti_i] = tv_2D_pos;
+	}
+
+//	for (ti_i = 0; ti_i < ti_vertex_nb; ti_i++)
+//		DBG_RenderVector(tv_O + vertices[ti_i], vertices[MTH_IntModulo(ti_i + 1, ti_vertex_nb)] - vertices[ti_i], color_blanc)
+}
+
+
+function int MTH_LIB_Intersection_Sphere_Sphere(vector tv_pos_A, float tf_rayon_A, vector tv_pos_B, float tf_rayon_B, int ti_flag_display_info)
+{	
+	float		tf_dist_sum_sqr;
+	vector		tv_temp;
+	
+	tv_temp = tv_pos_B;
+	tv_temp -= tv_pos_A;
+	
+	tf_dist_sum_sqr = tf_rayon_A;
+	tf_dist_sum_sqr += tf_rayon_B;
+	tf_dist_sum_sqr *= tf_dist_sum_sqr;
+
+	if (MTH_VecSqrNorm(tv_temp) > tf_dist_sum_sqr)
+	{
+#ifndef _FINAL_
+		if (ti_flag_display_info)
+		{
+			DBG_RenderSphere(tv_pos_A, tf_rayon_A, 0x8000FF00);
+			DBG_RenderSphere(tv_pos_B, tf_rayon_B, 0x8000FF00);
+		}
+#endif
+		return(false);
+	}
+	else
+	{
+#ifndef _FINAL_
+		if (ti_flag_display_info)
+		{
+			DBG_RenderSphere(tv_pos_A, tf_rayon_A, 0x800000FF);
+			DBG_RenderSphere(tv_pos_B, tf_rayon_B, 0x800000FF);
+		}
+#endif
+		return(true);
+	}
+}
+
+
+function vector MTH_LIB_Nearest_Cylindre_Pos(vector tv_cylinder_center, vector tv_cylinder_axis, float tf_cylinder_rayon, float tf_cylinder_length, vector tv_start_pos)
+{
+	float	tf_dist;
+	float	tf_dot_product;
+
+	vector tv_nearest_pos;
+
+	tv_nearest_pos = tv_start_pos;
+	tv_nearest_pos -= tv_cylinder_center;
+	
+	tf_dot_product = MTH_VecDotProduct(tv_nearest_pos, tv_cylinder_axis);
+	tv_nearest_pos -= tf_dot_product * tv_cylinder_axis;
+	tf_dot_product = MTH_FloatLimit(tf_dot_product, -tf_cylinder_length, tf_cylinder_length);
+	tf_dist = MTH_VecSqrNorm(tv_nearest_pos);
+	if (tf_dist > tf_cylinder_rayon * tf_cylinder_rayon)
+	{
+		tf_dist = MTH_FloatSqrt(tf_dist);
+		tv_nearest_pos /= tf_dist;
+		tv_nearest_pos *= tf_cylinder_rayon;
+	}
+	tv_nearest_pos += tf_dot_product * tv_cylinder_axis;
+	tv_nearest_pos += tv_cylinder_center;
+	return(tv_nearest_pos);
+}
+
+
+function int MTH_LIB_Intersection_Cylindre_Sphere(vector tv_cylinder_center, vector tv_cylinder_axis, float tf_cylinder_rayon, float tf_cylinder_length, vector tv_sphere_center, float tf_sphere_size, int ti_flag_display_info)
+{
+	vector	tv_nearest_pos;
+	
+	tv_nearest_pos = MTH_LIB_Nearest_Cylindre_Pos(tv_cylinder_center, tv_cylinder_axis, tf_cylinder_rayon, tf_cylinder_length, tv_sphere_center);
+	tv_nearest_pos -= tv_sphere_center;
+	
+	if (MTH_VecSqrNorm(tv_nearest_pos) <= tf_sphere_size * tf_sphere_size)
+	{
+#ifndef _FINAL_
+		if (ti_flag_display_info)
+		{
+			tv_cylinder_center -= tf_cylinder_length * tv_cylinder_axis;
+			tf_cylinder_length *= 2.0;
+//			DBG_RenderCylinder(tv_cylinder_center, tv_cylinder_axis * tf_cylinder_length, tf_cylinder_rayon, 0x800000FF);
+			DBG_RenderSphere(tv_sphere_center, tf_sphere_size, 0x800000FF);
+			DBG_RenderVector(tv_sphere_center, tv_nearest_pos, color_rouge);
+		}
+#endif
+		return(true);
+	}
+	else
+	{
+#ifndef _FINAL_
+		if (ti_flag_display_info)
+		{
+			tv_cylinder_center -= tf_cylinder_length * tv_cylinder_axis;
+			tf_cylinder_length *= 2.0;
+//			DBG_RenderCylinder(tv_cylinder_center, tv_cylinder_axis * tf_cylinder_length, tf_cylinder_rayon, 0x8000FF00);
+			DBG_RenderSphere(tv_sphere_center, tf_sphere_size, 0x8000FF00);
+			DBG_RenderVector(tv_sphere_center, tv_nearest_pos, color_vert);
+		}
+#endif
+		return(false);
+	}
+}
+
+
+function vector MTH_LIB_AllPosInCone(vector *tav_pos, int ti_pos_nb, vector tv_cone_origin, vector tv_cone_dir, float tf_cos_half_angle, int ti_flag_display_info)
+{
+	int			ti_i;
+
+	float		tf_sqr_dist;
+	float		tf_o;
+	float		tf_a;
+	float		tf_delta;
+	float		tf_A;
+	float		tf_B;
+	float		tf_C;
+	float		tf_X;
+	float		tf_biggest_X;
+
+	vector	tv_cone_to_pos;
+
+	tf_biggest_X = 0.0;
+	tf_A = 1.0;
+	tf_A -= 1.0 / (tf_cos_half_angle * tf_cos_half_angle);
+	for (ti_i= 0; ti_i < ti_pos_nb; ti_i++)
+	{
+		tv_cone_to_pos = tav_pos[ti_i];
+		tv_cone_to_pos -= tv_cone_origin;
+		tf_a = MTH_VecDotProduct(tv_cone_to_pos, tv_cone_dir);
+		tv_cone_to_pos -= tf_a * tv_cone_dir;
+		tf_o = MTH_VecDotProduct(tv_cone_to_pos, tv_cone_to_pos);
+		
+		tf_B = 2.0 * tf_a * tf_A;
+		tf_C = tf_a * tf_a * tf_A;
+		tf_C += tf_o;
+		tf_delta = (tf_B * tf_B) - (4.0 * tf_A * tf_C);
+		
+		if (tf_delta >= 0.0)
+		{
+			tf_delta = MTH_FloatSqrt(tf_delta);
+			
+			tf_X = MTH_FloatMax( (-tf_B - tf_delta) / (2.0 * tf_A), (-tf_B + tf_delta) / (2.0 * tf_A));
+			tf_X = MTH_FloatMax(tf_X, 0.0);
+			
+			if (tf_X > tf_biggest_X)
+				tf_biggest_X = tf_X;
+		}
+	}
+
+	tv_cone_origin -= tf_biggest_X * tv_cone_dir;
+
+//#ifndef _FINAL_
+//	if (ti_flag_display_info)
+//		DBG_RenderCone(tv_cone_origin, tv_cone_dir * 100.0, MTH_FloatACos(tf_cos_half_angle), 0x80008000);
+//#endif
+
+	return(tv_cone_origin);
+}
+
+
+function vector MTH_LIB_AllSphereInCone(vector *tav_pos, float *taf_size, int ti_pos_nb, vector tv_cone_origin, vector tv_cone_dir, float tf_cos_half_angle, float tf_dist_max, int ti_flag_display_info, float &tf_dist_rajout)
+{
+	int			ti_i;
+	float		tf_sqr_cos;
+	float		tf_sqr_dist;
+	float		tf_o;
+	float		tf_a;
+	float		tf_precal;
+	float		tf_delta;
+	float		tf_A;
+	float		tf_B;
+	float		tf_C;
+	float		tf_X;
+	float		tf_biggest_X;
+	float		tf_sin;
+	vector	tv_cone_to_pos;
+	vector	tv_horizon;
+	vector	tv_cone_limit;
+	
+	tf_biggest_X = 0.0;
+	tf_sqr_cos = tf_cos_half_angle;
+	tf_sqr_cos *= tf_sqr_cos;
+	tf_sin = MTH_FloatSqrt(1.0 - tf_sqr_cos);
+
+	for (ti_i= 0; ti_i < ti_pos_nb; ti_i++)
+	{
+		tv_cone_to_pos = tav_pos[ti_i];
+		tv_cone_to_pos -= tv_cone_origin;
+
+		// ON VA CONSTRUIRE LE VECTEUR QUI CORRESPOND A LA LIMITE DU CONE
+		tv_horizon = MTH_VecCrossProduct(tv_cone_to_pos, tv_cone_dir);
+		tv_horizon = MTH_VecCrossProduct(tv_cone_dir, tv_horizon);
+		MTH_VecSetNormalize(tv_horizon);
+		tv_cone_limit = tf_cos_half_angle * tv_horizon;
+		tv_cone_limit -= tv_cone_dir * tf_sin;
+
+#ifndef _FINAL_
+		if (ti_flag_display_info)
+			DBG_RenderSphere(tav_pos[ti_i], taf_size[ti_i], 0x80008000);
+#endif
+
+		tv_cone_to_pos = tav_pos[ti_i];
+		tv_cone_to_pos += tv_cone_limit * taf_size[ti_i];
+		tv_cone_to_pos -= tv_cone_origin;
+		tf_a = MTH_VecDotProduct(tv_cone_to_pos, tv_cone_dir);
+		tv_cone_to_pos -= tf_a * tv_cone_dir;
+		tf_o = MTH_VecDotProduct(tv_cone_to_pos, tv_cone_to_pos);
+		
+		tf_precal = 1.0;
+		tf_precal -= 1.0 / tf_sqr_cos;
+		
+		tf_A = tf_precal;
+		tf_B = 2.0 * tf_a * tf_precal;
+		tf_C = tf_a * tf_a * tf_precal;
+		tf_C += tf_o;
+		tf_delta = (tf_B * tf_B) - (4.0 * tf_A * tf_C);
+		
+		if (tf_delta >= 0.0)
+		{
+			tf_delta = MTH_FloatSqrt(tf_delta);
+			
+			tf_X = MTH_FloatMax( (-tf_B - tf_delta) / (2.0 * tf_A), (-tf_B + tf_delta) / (2.0 * tf_A));
+			tf_X = MTH_FloatMax(tf_X, 0.0);
+			
+			if (tf_X > tf_biggest_X)
+				tf_biggest_X = tf_X;
+		}
+	}
+
+	tf_biggest_X = MTH_FloatMin(tf_biggest_X, tf_dist_max);
+
+	tf_dist_rajout = tf_biggest_X;
+
+	tv_cone_origin -= tf_biggest_X * tv_cone_dir;
+
+//#ifndef _FINAL_
+//	if (ti_flag_display_info)
+//		DBG_RenderCone(tv_cone_origin, tv_cone_dir * 100.0, MTH_ACos(tf_cos_half_angle), 0x80008000);
+//#endif
+
+	return(tv_cone_origin);
+}
+
+
+function int MTH_LIB_OBB_OBB_Intersection(object to_gaoA, vector tv_A_min, vector tv_A_max, object to_gaoB, vector tv_B_min, vector tv_B_max, int ti_display_info)
+{
+	int			ti_i;
+	int			ti_k;
+	
+	float		tf_a[3];
+	float		tf_b[3];
+	float		tf_T[3];
+	float		taf_R[3][3];	
+
+	float 		tf_ra;
+	float 		tf_rb;
+	float 		tf_t;
+	
+	vector	tv_A;
+	vector	tv_A_extend;
+	
+	vector	tv_B;
+	vector	tv_B_extend;
+	
+	vector	tv_AB;
+	vector	tv_inA_AB;
+	
+	vector	tv_A_axis[3];
+	vector	tv_B_axis[3];
+	
+	// A =======================================
+	tv_A_axis[0] = @o(to_gaoA) OBJ_HorizonGet();
+	tv_A_axis[1] = @o(to_gaoA) OBJ_SightGet();
+	tv_A_axis[2] = @o(to_gaoA) OBJ_BankingGet();
+	
+	tv_A_extend = (tv_A_max - tv_A_min) * 0.5;
+	
+	tv_A = @o(to_gaoA) OBJ_PosGet();
+	tv_A += @o(to_gaoA) MTH_VecLocalToGlobal(tv_A_min);
+	tv_A += @o(to_gaoA) MTH_VecLocalToGlobal(tv_A_extend);
+	
+	tf_a[0] = tv_A_extend.x;
+	tf_a[1] = tv_A_extend.y;
+	tf_a[2] = tv_A_extend.z;
+	
+	// B =======================================
+	tv_B_axis[0] = @o(to_gaoB) OBJ_HorizonGet();
+	tv_B_axis[1] = @o(to_gaoB) OBJ_SightGet();
+	tv_B_axis[2] = @o(to_gaoB) OBJ_BankingGet();
+	
+	tv_B_extend = (tv_B_max - tv_B_min) * 0.5;
+	
+	tv_B = @o(to_gaoB) OBJ_PosGet();
+	tv_B += @o(to_gaoB) MTH_VecLocalToGlobal(tv_B_min);
+	tv_B += @o(to_gaoB) MTH_VecLocalToGlobal(tv_B_extend);
+	
+	tf_b[0] = tv_B_extend.x;
+	tf_b[1] = tv_B_extend.y;
+	tf_b[2] = tv_B_extend.z;
+	
+	// AB et T ==================================
+	tv_AB = tv_B - tv_A;
+	tf_T[0] = MTH_VecDotProduct(tv_AB, tv_A_axis[0]);
+	tf_T[1] = MTH_VecDotProduct(tv_AB, tv_A_axis[1]);
+	tf_T[2] = MTH_VecDotProduct(tv_AB, tv_A_axis[2]);
+	
+	for (ti_i = 0; ti_i < 3; ti_i++)
+		for (ti_k = 0; ti_k < 3; ti_k++)
+			taf_R[ti_i][ti_k] = MTH_VecDotProduct(tv_A_axis[ti_i], tv_B_axis[ti_k]);
+	
+	for (ti_i = 0; ti_i < 3; ti_i++)
+	{
+		tf_ra = tf_a[ti_i];
+	
+		tf_rb = tf_b[0] * MTH_FloatAbs(taf_R[ti_i][0]);
+		tf_rb += tf_b[1] * MTH_FloatAbs(taf_R[ti_i][1]);
+		tf_rb += tf_b[2] * MTH_FloatAbs(taf_R[ti_i][2]);
+	
+		tf_t = MTH_FloatAbs(tf_T[ti_i]);
+	
+		if (tf_t > tf_ra + tf_rb) 
+		{
+#ifndef _FINAL_
+			if (ti_display_info)
+			{
+				DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+				DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+			}
+#endif
+			return(false);
+		}
+	}
+	
+	for (ti_k = 0; ti_k < 3; ti_k++)
+	{
+		tf_ra = tf_a[0] * MTH_FloatAbs(taf_R[0][ti_k]);
+		tf_ra += tf_a[1] * MTH_FloatAbs(taf_R[1][ti_k]);
+		tf_ra += tf_a[2] * MTH_FloatAbs(taf_R[2][ti_k]);
+	
+		tf_rb = tf_b[ti_k];
+	
+		tf_t = tf_T[0] * taf_R[0][ti_k];
+		tf_t += tf_T[1] * taf_R[1][ti_k];
+		tf_t += tf_T[2] * taf_R[2][ti_k];
+		tf_t = MTH_FloatAbs(tf_t);
+	
+		if (tf_t > tf_ra + tf_rb)
+		{
+#ifndef _FINAL_
+			if (ti_display_info)
+			{
+				DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+				DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+			}
+#endif
+			return(false);
+		}
+	}
+	
+	//9 cross products
+	
+	//L = A0 x B0
+	tf_ra = tf_a[1] * MTH_FloatAbs(taf_R[2][0]);
+	tf_ra += tf_a[2] * MTH_FloatAbs(taf_R[1][0]);
+	
+	tf_rb = tf_b[1] * MTH_FloatAbs(taf_R[0][2]);
+	tf_rb += tf_b[2] * MTH_FloatAbs(taf_R[0][1]);
+	
+	tf_t = tf_T[2] * taf_R[1][0];
+	tf_t -= tf_T[1] * taf_R[2][0];
+	tf_t = MTH_FloatAbs(tf_t);
+	
+	if (tf_t > tf_ra + tf_rb)
+	{
+#ifndef _FINAL_
+		if (ti_display_info)
+		{
+			DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+			DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+		}
+#endif
+		return(false);
+	}
+	
+	//L = A0 x B1
+	tf_ra = tf_a[1] * MTH_FloatAbs(taf_R[2][1]);
+	tf_ra += tf_a[2] * MTH_FloatAbs(taf_R[1][1]);
+	
+	tf_rb = tf_b[0] * MTH_FloatAbs(taf_R[0][2]);
+	tf_rb += tf_b[2] * MTH_FloatAbs(taf_R[0][0]);
+	
+	tf_t = tf_T[2] * taf_R[1][1];
+	tf_t -= tf_T[1] * taf_R[2][1];
+	tf_t = MTH_FloatAbs(tf_t);
+	
+	if (tf_t > tf_ra + tf_rb)
+	{
+#ifndef _FINAL_
+		if (ti_display_info)
+		{
+			DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+			DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+		}
+#endif
+		return(false);
+	}
+	
+	//L = A0 x B2
+	tf_ra = tf_a[1] * MTH_FloatAbs(taf_R[2][2]);
+	tf_ra += tf_a[2] * MTH_FloatAbs(taf_R[1][2]);
+	
+	tf_rb = tf_b[0] * MTH_FloatAbs(taf_R[0][1]);
+	tf_rb += tf_b[1] * MTH_FloatAbs(taf_R[0][0]);
+	
+	tf_t = tf_T[2] * taf_R[1][2];
+	tf_t -= tf_T[1] * taf_R[2][2];
+	tf_t = MTH_FloatAbs(tf_t);
+	
+	if (tf_t > tf_ra + tf_rb)
+	{
+#ifndef _FINAL_
+		if (ti_display_info)
+		{
+			DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+			DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+		}
+#endif
+		return(false);
+	}
+	
+	//L = A1 x B0
+	tf_ra = tf_a[0] * MTH_FloatAbs(taf_R[2][0]);
+	tf_ra += tf_a[2] * MTH_FloatAbs(taf_R[0][0]);
+	
+	tf_rb = tf_b[1] * MTH_FloatAbs(taf_R[1][2]);
+	tf_rb += tf_b[2] * MTH_FloatAbs(taf_R[1][1]);
+	
+	tf_t = tf_T[0] * taf_R[2][0];
+	tf_t -= tf_T[2] * taf_R[0][0];
+	tf_t = MTH_FloatAbs(tf_t);
+	
+	if (tf_t > tf_ra + tf_rb)
+	{
+#ifndef _FINAL_
+		if (ti_display_info)
+		{
+			DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+			DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+		}
+#endif
+		return(false);
+	}
+	
+	//L = A1 x B1
+	tf_ra = tf_a[0] * MTH_FloatAbs(taf_R[2][1]);
+	tf_ra += tf_a[2] * MTH_FloatAbs(taf_R[0][1]);
+	
+	tf_rb = tf_b[0] * MTH_FloatAbs(taf_R[1][2]);
+	tf_rb += tf_b[2] * MTH_FloatAbs(taf_R[1][0]);
+	
+	tf_t = tf_T[0] * taf_R[2][1];
+	tf_t -= tf_T[2] * taf_R[0][1];
+	tf_t = MTH_FloatAbs(tf_t);
+	
+	if (tf_t > tf_ra + tf_rb)
+	{
+#ifndef _FINAL_
+		if (ti_display_info)
+		{
+			DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+			DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+		}
+#endif
+		return(false);
+	}
+	
+	//L = A1 x B2
+	tf_ra = tf_a[0] * MTH_FloatAbs(taf_R[2][2]);
+	tf_ra += tf_a[2] * MTH_FloatAbs(taf_R[0][2]);
+	
+	tf_rb = tf_b[0] * MTH_FloatAbs(taf_R[1][1]);
+	tf_rb += tf_b[1] * MTH_FloatAbs(taf_R[1][0]);
+	
+	tf_t = tf_T[0] * taf_R[2][2];
+	tf_t -= tf_T[2] * taf_R[0][2];
+	tf_t = MTH_FloatAbs(tf_t);
+	
+	if (tf_t > tf_ra + tf_rb)
+	{
+#ifndef _FINAL_
+		if (ti_display_info)
+		{
+			DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+			DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+		}
+#endif
+		return(false);
+	}
+	
+	//L = A2 x B0
+	tf_ra = tf_a[0] * MTH_FloatAbs(taf_R[1][0]);
+	tf_ra += tf_a[1] * MTH_FloatAbs(taf_R[0][0]);
+	
+	tf_rb = tf_b[1] * MTH_FloatAbs(taf_R[2][2]);
+	tf_rb += tf_b[2] * MTH_FloatAbs(taf_R[2][1]);
+	
+	tf_t = tf_T[1] * taf_R[0][0];
+	tf_t -= tf_T[0] * taf_R[1][0];
+	tf_t = MTH_FloatAbs(tf_t);
+	
+	if (tf_t > tf_ra + tf_rb)
+	{
+#ifndef _FINAL_
+		if (ti_display_info)
+		{
+			DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+			DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+		}
+#endif
+		return(false);
+	}
+	
+	//L = A2 x B1
+	tf_ra = tf_a[0] * MTH_FloatAbs(taf_R[1][1]);
+	tf_ra += tf_a[1] * MTH_FloatAbs(taf_R[0][1]);
+	
+	tf_rb = tf_b[0] * MTH_FloatAbs(taf_R[2][2]);
+	tf_rb += tf_b[2] * MTH_FloatAbs(taf_R[2][0]);
+	
+	tf_t = tf_T[1] * taf_R[0][1];
+	tf_t -= tf_T[0] * taf_R[1][1];
+	tf_t = MTH_FloatAbs(tf_t);
+	
+	if (tf_t > tf_ra + tf_rb)
+	{
+#ifndef _FINAL_
+		if (ti_display_info)
+		{
+			DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+			DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+		}
+#endif
+		return(false);
+	}
+	
+	//L = A2 x B2
+	tf_ra = tf_a[0] * MTH_FloatAbs(taf_R[1][2]);
+	tf_ra += tf_a[1] * MTH_FloatAbs(taf_R[0][2]);
+	
+	tf_rb = tf_b[0] * MTH_FloatAbs(taf_R[2][1]);
+	tf_rb += tf_b[1] * MTH_FloatAbs(taf_R[2][0]);
+	
+	tf_t = tf_T[1] * taf_R[0][2];
+	tf_t -= tf_T[0] * taf_R[1][2];
+	tf_t = MTH_FloatAbs(tf_t);
+	
+	if (tf_t > tf_ra + tf_rb)
+	{
+#ifndef _FINAL_
+		if (ti_display_info)
+		{
+			DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_vert);
+			DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_vert);
+		}
+#endif
+		return(false);
+	}
+	
+#ifndef _FINAL_
+	if (ti_display_info)
+	{
+		DBG_RenderOOBBox(to_gaoA, tv_A_min, tv_A_max, color_rouge);
+		DBG_RenderOOBBox(to_gaoB, tv_B_min, tv_B_max, color_rouge);
+	}
+#endif
+	return(true);
+}
+
+
+function float MTH_LIB_Get_Intersection_Time(vector tv_pos_A, vector tv_speed_A, float tf_size_A, vector tv_pos_B, vector tv_speed_B, float tf_size_B)
+{
+	float		tf_X1;
+	float		tf_X2;
+	float		tf_A;
+	float		tf_B;
+	float		tf_C;
+	float		tf_DELTA;
+
+	vector	tv_AB;
+	vector	tv_diff_speed;
+
+	tv_diff_speed = tv_speed_B - tv_speed_A;
+
+	tv_AB = tv_pos_B - tv_pos_A;
+
+	tf_C = tf_size_A + tf_size_B;
+	tf_C *= tf_C;
+	tf_C = MTH_VecDotProduct(tv_AB, tv_AB) - tf_C;
+	
+	if (tf_C < 0.0)
+		return(0.0);
+
+	tf_A = MTH_VecDotProduct(tv_diff_speed, tv_diff_speed);
+	if (tf_A == 0.0)
+		return(Cf_Infinit);
+
+	tf_B = 2.0 * MTH_VecDotProduct(tv_AB, tv_diff_speed);
+	tf_DELTA = tf_B * tf_B;
+	tf_DELTA -= 4.0 * tf_A * tf_C;
+	if (tf_DELTA < 0.0)
+	{
+		return(Cf_Infinit);
+	}
+	else if (MTH_FloatAbs(tf_DELTA) < 0.001)
+	{
+		tf_X1 = -tf_B / (2.0 * tf_A);
+	
+//		DBG_RenderVector(tv_pos_A, tv_speed_A * tf_X1, color_rouge)	
+//		DBG_RenderVector(tv_pos_B, tv_speed_B * tf_X1, color_rouge)
+//		DBG_RenderSphere(tv_pos_A + (tv_speed_A * tf_X1), tf_size_A, 0x800000FF)	
+//		DBG_RenderSphere(tv_pos_B + (tv_speed_B * tf_X1), tf_size_B, 0x800000FF)
+		return(tf_X1);
+	}
+	else
+	{
+		tf_DELTA = MTH_FloatSqrt(tf_DELTA);
+		tf_X1 = -tf_B - tf_DELTA;
+		tf_X1 /= 2.0 * tf_A;
+		
+		tf_X2 = -tf_B + tf_DELTA;
+		tf_X2 /= 2.0 * tf_A;
+		
+		if (tf_X1 < 0.0 && tf_X1 < 0.0)
+			return(Cf_Infinit);
+		
+		if (tf_X1 < 0.0)
+			tf_X1 = tf_X2;
+		else
+			tf_X1 = MTH_FloatMin(tf_X1, tf_X2);
+			
+//		DBG_RenderVector(tv_pos_A, tv_speed_A * tf_X1, color_rouge)	
+//		DBG_RenderVector(tv_pos_B, tv_speed_B * tf_X1, color_rouge)
+//		DBG_RenderSphere(tv_pos_A + (tv_speed_A * tf_X1), tf_size_A, 0x800000FF)	
+//		DBG_RenderSphere(tv_pos_B + (tv_speed_B * tf_X1), tf_size_B, 0x800000FF)
+		return(tf_X1);
+	}
+
+	return(Cf_Infinit);
+}
+
+
+function void MTH_LIB_PHY_Display_Trajectory(vector tv_start_pos, vector tv_start_speed, vector tv_gravity, float tf_time, int ti_segment_nb, color tc_color)
+{
+	int		ti_i;
+	
+	float	tf_time_step;
+	
+	vector	tv_pos;
+	vector	tv_last_pos;
+	
+	tf_time_step = tf_time / ti_segment_nb;
+
+	tv_last_pos = tv_start_pos;
+
+	for (ti_i = 0; ti_i < ti_segment_nb; ti_i++)
+	{
+		tf_time = ti_i + 1;
+		tf_time *= tf_time_step;
+		
+		tv_pos = tv_start_pos;
+		tv_pos += tv_start_speed * tf_time;
+		tf_time *= tf_time;
+		tv_pos += tv_gravity * (0.5 * tf_time);
+		
+		DBG_RenderVector(tv_last_pos, tv_pos - tv_last_pos, tc_color);
+		tv_last_pos = tv_pos;
+	}
+}
+	
+
+function vector MTH_LIB_Impulsion_With_Init_Speed(vector tv_start_pos, vector tv_dest_pos, vector tv_gravity, float tf_init_speed, int ti_flag_shortest_duration, float &tf_time)
+{
+	float	tf_A;
+	float	tf_B;
+	float	tf_C;
+	float	tf_D;
+	float	tf_DELTA;
+	float	tf_sqr_init_speed;
+	
+	vector	tv_move;
+	vector	tv_impulsion;
+	
+	tv_move = tv_dest_pos - tv_start_pos;
+	DBG_RenderVector(tv_start_pos, tv_move, 0x80FF80);
+	
+	tf_sqr_init_speed = tf_init_speed;
+	tf_sqr_init_speed *= tf_sqr_init_speed;
+	
+	tf_A = MTH_VecSqrNorm(tv_gravity) * 0.25; // ( Gravity ^ 2 ) / 4
+	tf_B = - MTH_VecDotProduct(tv_move, tv_gravity) - tf_sqr_init_speed;
+	tf_C = MTH_VecSqrNorm(tv_move); // ( Move ^ 2)
+	
+	tf_DELTA = (tf_B * tf_B) - (4.0 * tf_A * tf_C);
+	if (tf_DELTA >= 0.0)
+	{
+		// There is a solution
+		tf_DELTA = MTH_FloatSqrt(tf_DELTA);
+		tf_A = 1.0 / (2.0 * tf_A);
+		tf_C = (-tf_B - tf_DELTA) * tf_A;
+		tf_D = (-tf_B + tf_DELTA) * tf_A;
+		if (ti_flag_shortest_duration)
+			tf_time = MTH_FloatMin(tf_C, tf_D);
+		else
+			tf_time = MTH_FloatMax(tf_C, tf_D);
+		tf_time = MTH_FloatSqrt(tf_time);
+		
+		tv_impulsion = tv_move / tf_time;
+		tv_impulsion -= tv_gravity * (0.5 * tf_time);
+	}
+	else
+	{
+		// No solution, return the best impulsion
+		tf_time = Cf_Infinit;
+		
+		tv_impulsion = MTH_VecBlendRotate(tv_move, -tv_gravity, 0.5);
+		MTH_VecSetNorm(tv_impulsion, tf_init_speed);
+	}
+
+	return(tv_impulsion);
+}
+
+function int MTH_LIB_Collide_Sphere(vector tv_start_pos, vector tv_move_dir, float tf_move_length, float tf_size, vector tv_occluder_pos, float tf_occluder_size, vector &tv_collide_pos)
+{
+	float			tf_X;
+	float			tf_A;
+	float			tf_B;
+	float			tf_C;
+	float			tf_occluder_sqr_size;
+	
+	vector			tv_AB;
+
+	tf_occluder_sqr_size = tf_occluder_size + tf_size;
+	if ( tf_occluder_sqr_size == 0.0 )
+		return(false);
+
+	tf_occluder_sqr_size *= tf_occluder_sqr_size;
+
+	tv_occluder_pos.z = tv_start_pos.z;
+
+	tv_AB = tv_start_pos - tv_occluder_pos;
+	tf_C = MTH_VecSqrNorm(tv_AB) - tf_occluder_sqr_size;
+	if (tf_C < 0.0)
+	{
+		tv_collide_pos = tv_start_pos;
+		return(true);
+	}
+
+	tf_A = MTH_VecSqrNorm(tv_move_dir);
+	if ( tf_A < 0.0001)
+		return(false);	
+
+	tf_B = 2.0 * MTH_VecDotProduct(tv_move_dir, tv_AB);
+
+	// DELTA
+	tf_X = ( tf_B * tf_B ) - ( 4.0 * tf_A * tf_C );
+
+	if ( tf_X < 0.0 )
+		return(false);	
+
+	// X = (-B +/- sqr(DELTA)) / 2A
+	tf_X = MTH_FloatSqrt(tf_X);
+	tf_X = - tf_B - tf_X;
+	tf_X /= 2.0 * tf_A;
+	
+	if (tf_X >= 0.0 && tf_X <= tf_move_length)
+	{
+		tv_collide_pos = tv_start_pos;
+		tv_collide_pos += tf_X * tv_move_dir;
+		return(true);
+	}
+
+	return(false);
+}
+
+
+function vector MTH_LIB_Get_Sphere_Pos(vector tv_start_pos, vector tv_dest_pos, vector tv_sight, float tf_size, vector tv_occluder_pos, float tf_occluder_size, vector tv_occluder_sight, vector tv_occluder_horizon, int ti_flag_force_side, float tf_extrusion)
+{
+	vector		tv_X;
+	vector		tv_Y;
+	vector		tv_pos;
+
+	float		tf_X;
+	float		tf_Y;
+	float		tf_sqr_size;
+	float		tf_sqr_X;
+
+	tf_occluder_size += tf_size + tf_extrusion;
+	tf_sqr_size = tf_occluder_size * tf_occluder_size;
+
+	tv_start_pos.z = tv_occluder_pos.z;
+
+	tv_X = tv_start_pos - tv_occluder_pos;
+	tf_sqr_X = MTH_VecSqrNorm(tv_X);
+		
+	tv_Y.x = -tv_X.y;
+	tv_Y.y = tv_X.x;
+	tv_Y.z = 0.0;
+
+	if (ti_flag_force_side && MTH_FloatSign(MTH_VecDotProduct(tv_start_pos - tv_occluder_pos, tv_occluder_horizon)) != MTH_FloatSign(MTH_VecDotProduct(tv_dest_pos - tv_occluder_pos, tv_occluder_horizon)))
+		tv_Y *= MTH_FloatSign(MTH_VecDotProduct(tv_occluder_sight, tv_Y));
+	else
+		tv_Y *= MTH_FloatSign(MTH_VecDotProduct(tv_sight, tv_Y));
+	
+	if (tf_sqr_X < 0.0001)
+	{
+		// On est pile sur le pivot de l'occluder
+		if (ti_flag_force_side)
+		{
+			tv_pos = tv_occluder_pos;
+			tv_pos += tv_occluder_sight * tf_occluder_size;
+		}
+		else
+		{
+			tv_pos = tv_occluder_pos;
+			tv_pos += tv_sight * tf_occluder_size;
+		}
+	}
+	else if (tf_sqr_X < tf_sqr_size)
+	{
+		// On est dans l'occluder
+		tf_X = MTH_FloatSqrt(tf_sqr_X);
+		tv_X /= tf_X;
+		tv_Y /= tf_X;
+		
+		tv_pos = tv_occluder_pos;
+		tv_pos += tv_X * tf_occluder_size;
+		tv_pos += tv_Y * tf_extrusion;
+	}
+	else
+	{	
+		// On est loin de l'occluder
+		tf_X = tf_sqr_size / tf_sqr_X;
+		tf_Y = MTH_FloatSqrt(tf_X * ( 1.0 - tf_X ) );
+		
+		tv_pos = tv_occluder_pos;
+		tv_pos += tf_X * tv_X;
+		tv_pos += tf_Y * tv_Y;
+	}
+	
+	return(tv_pos);
+}
+
+function void MTH_LIB_Get_Dodge_Pos(vector tv_start_pos, vector tv_sight, float tf_size, vector tv_occluder_pos, float tf_occluder_size, float tf_extrusion, vector &tv_pos_A, vector &tv_pos_B)
+{
+	vector		tv_X;
+	vector		tv_Y;
+
+	float		tf_X;
+	float		tf_Y;
+	float		tf_sqr_size;
+	float		tf_sqr_X;
+
+	tf_occluder_size += tf_size + tf_extrusion;
+	tf_sqr_size = tf_occluder_size * tf_occluder_size;
+
+	tv_start_pos.z = tv_occluder_pos.z;
+
+	tv_X = tv_start_pos - tv_occluder_pos;
+	tf_sqr_X = MTH_VecSqrNorm(tv_X);
+		
+	tv_Y.x = -tv_X.y;
+	tv_Y.y = tv_X.x;
+	tv_Y.z = 0.0;
+	
+	tv_Y *= MTH_FloatSign(MTH_VecDotProduct(tv_sight, tv_Y));
+
+	if (tf_sqr_X < 0.0001)
+	{
+		// On est pile sur le pivot de l'occluder
+		tv_pos_A = tv_occluder_pos;
+		tv_pos_A += OBJ_SightGet() * tf_occluder_size;
+		tv_pos_B = tv_pos_A;
+	}
+	else if (tf_sqr_X < tf_sqr_size)
+	{
+		// On est dans l'occluder
+		tf_X = MTH_FloatSqrt(tf_sqr_X);
+		tv_X /= tf_X;
+		tv_Y /= tf_X;
+		
+		tv_pos_A = tv_occluder_pos;
+		tv_pos_A += tv_X * tf_occluder_size;
+		tv_pos_A += tv_Y * tf_extrusion;
+		tv_pos_B = tv_pos_A;
+
+//		tf_X = MTH_FloatSqrt(tf_sqr_X);
+//		tv_X /= tf_X;
+//		tv_Y /= tf_X;
+//		
+//		tv_pos_A = tv_occluder_pos;
+//		tv_pos_A += tv_Y * tf_occluder_size;
+//
+//		tv_pos_B = tv_occluder_pos;
+//		tv_pos_B -= tv_Y * tf_occluder_size;
+	}
+	else
+	{	
+		// On est loin de l'occluder
+		tf_X = tf_sqr_size / tf_sqr_X;
+		tf_Y = MTH_FloatSqrt(tf_X * ( 1.0 - tf_X ) );
+		
+		tv_pos_A = tv_occluder_pos;
+		tv_pos_A += tf_X * tv_X;
+		tv_pos_B = tv_pos_A;
+		tv_pos_A += tf_Y * tv_Y;
+		tv_pos_B -= tf_Y * tv_Y;
+	}
+}
+
+
+
+function vector MTH_VecNormalizeDefault( vector tv_vec1, vector tv_default )
+{
+	float	tf_norm;
+	tf_norm = MTH_VecNorm(tv_vec1);
+	if ( MTH_FloatNullToler(tf_norm,Cf_Epsilon))
+		return tv_default;
+	else
+		return (tv_vec1 / tf_norm);
+}
+
+
+function vector MTH_VecHorzNormalizeDefault( vector tv_vec1, vector tv_default )
+{
+	float	tf_norm;
+	tv_vec1.z = 0.0;
+	tf_norm = MTH_VecNorm(tv_vec1);
+	if ( MTH_FloatNullToler(tf_norm,Cf_Epsilon))
+		return tv_default;
+	else
+		return (tv_vec1 / tf_norm);
+}
+
+function vector MTH_VecDefault( vector tv_vec1, vector tv_default )
+{
+	if ( ! MTH_VecNullEpsilon(tv_vec1))
+		return tv_vec1;
+	else
+		return tv_default;
+}
+
+function vector MTH_VecTolerDefault( vector tv_vec1, vector tv_default, float tf_toler)
+{
+	if ( ! MTH_VecNullToler(tv_vec1, tf_toler))
+		return tv_vec1;
+	else
+		return tv_default;
+}
+
+// modifie le vecteur pour qu'il ait une norme <= à tf_max
+function void MTH_VecNormMaxSet(vector &tv_vec, float tf_max)
+{
+	float	tf_norm;
+	tf_norm = MTH_VecNorm(tv_vec);
+	if (tf_norm > 0.0 )
+		tv_vec *= MTH_FloatMin(tf_norm, tf_max) / tf_norm;
+}
+
+// modifie le vecteur pour qu'il ait une norme <= à tf_max ET renvoie la norme initiale du vecteur
+function float MTH_VecNormMaxSet2(vector &tv_vec, float tf_max)
+{
+	float	tf_norm;
+	tf_norm = MTH_VecNorm(tv_vec);
+	if (tf_norm > 0.0 )
+		tv_vec *= MTH_FloatMin(tf_norm, tf_max) / tf_norm;
+
+	return tf_norm;
+}
+
+// modifie le vecteur pour qu'il ait une norme >= à tf_min
+function void MTH_VecNormMinSet(vector &tv_vec, float tf_min)
+{
+	float	tf_norm;
+	tf_norm = MTH_VecNorm(tv_vec);
+	if (tf_norm > 0.0 )
+		tv_vec *= MTH_FloatMax(tf_norm, tf_min) / tf_norm;
+}
+
+// ARRAY_SEARCH ==================================================================================================
+
+function int MTH_ArraySearchModifier(modifier *tam_array, int ti_size, modifier tm_search)
+{
+	int ti_ID;
+	for ( ti_ID =0; ti_ID < ti_size; ti_ID++)
+	{
+		if ( tam_array[ti_ID] == tm_search)
+			return ti_ID;	// Trouvé
+	}
+	// Pas trouvé
+	return -1;	
+}
+
+function int MTH_ArraySearchObject(object *tao_array, int ti_size, object to_search)
+{
+	int ti_ID;
+	for ( ti_ID =0; ti_ID < ti_size; ti_ID++)
+	{
+		if ( tao_array[ti_ID] == to_search)
+			return ti_ID;	// Trouvé
+	}
+	// Pas trouvé
+	return -1;	
+}
+/*
+function int MTH_ArrayFullSearchObject(object *tao_array, int ti_size, object to_search)
+{
+	int ti_ID;
+	for ( ti_ID =0; ti_ID < ti_size; ti_ID++)
+	{
+		if ( tao_array[ti_ID] == to_search)
+			return ti_ID;	// Trouvé
+	}
+	// Pas trouvé
+	return -1;	
+}
+*/
+function int MTH_ArraySearchInt(int *tai_array, int ti_size, int ti_search)
+{
+	int ti_ID;
+	for ( ti_ID =0; ti_ID < ti_size; ti_ID++)
+	{
+		if ( tai_array[ti_ID] == ti_search)
+			return ti_ID;	// Trouvé
+	}
+	// Pas trouvé
+	return -1;	
+}
+
+function int MTH_ArraySearchVector(vector *tav_array, int ti_size, vector tv_search)
+{
+	int ti_ID;
+	for ( ti_ID =0; ti_ID < ti_size; ti_ID++)
+	{
+		if ( tav_array[ti_ID] == tv_search)
+			return ti_ID;	// Trouvé
+	}
+	// Pas trouvé
+	return -1;	
+}
+
+function vector MTH_LIB_ImpulsionGet_Friction(vector tv_start_pos, vector tv_dest_pos, vector tv_gravity, float tf_friction,int ti_flag_Z_friction ,float &tf_time, float tf_hauteur_saut)
+{
+	int			ti_i;
+
+	float		tf_last_time;
+	float		tf_exp_Ft;
+	float		tf_exp_minus_Ft;
+	float		tf_cos_h_Ft;
+	float		tf_sin_h_Ft;
+	float		tf_derive_en_t;
+	float		tf_tangente_en_t;
+	float		tf_precal_derivee;
+	float		tf_precal_tangente;
+	float		tf_x2_plus_y2;
+	float		tf_G2_sur_4;
+	float		tf_inv_time;
+	float		tf_inv_sqr_time;
+	
+	float		tf_precal;
+
+	vector	tv_A;
+	vector	tv_M;
+	vector	tv_precal;
+	vector	tv_start_to_dest;
+	vector	tv_impulsion;
+	vector	tv_vt1;
+	vector	tv_vt2;
+
+	// VECTEUR DEPLACEMENT
+	tv_start_to_dest = tv_dest_pos;
+	tv_start_to_dest -= tv_start_pos;
+
+	tv_A = tv_gravity / tf_friction;
+
+	if (tf_hauteur_saut > 0.0)
+	{
+		if(ti_flag_Z_friction)
+			DBG_Error("A faire");
+		else
+		{
+			tf_precal = -2.0 * tv_gravity.z * tf_hauteur_saut;
+			tf_time = - MTH_FloatSqrt(tf_precal);
+	
+			tf_precal = 2.0 * tv_gravity.z * (-tv_start_to_dest.z - tf_hauteur_saut);
+	//			tf_precal = MATH_AbsFloat(tf_precal)
+			tf_precal = MTH_FloatMax(tf_precal, 0.0);
+			tf_time -= MTH_FloatSqrt(tf_precal);
+			tf_time /= tv_gravity.z;
+		}
+	}
+
+	if (tf_time <= 0.0)
+	{
+		// ON VEUT CALCULER LE TEMPS QUI CORRESPOND A L'IMPULSION MIN
+		// RESOLUTION NUMERIQUE PAR LA METHODE DE NEWTON
+
+		tf_time = 0.5;
+		tf_last_time = 10.0;
+		ti_i = 0;
+
+		if (ti_flag_Z_friction)
+		{
+			// FRICTION UNIFORME SUR LES AXES	
+			tv_M = tv_start_to_dest;
+		
+			while (! MTH_FloatNullToler(tf_time, 0.0001) && (MTH_FloatAbs(tf_time - tf_last_time) > 0.001 && ti_i < 10))
+			{
+				ti_i++;
+			
+				tf_exp_Ft = MTH_FloatExp(tf_friction * tf_time);
+				tf_exp_minus_Ft = 1.0 / tf_exp_Ft;
+			
+				tf_cos_h_Ft = (tf_exp_Ft + tf_exp_minus_Ft) * 0.5;
+			
+				tv_precal = (tv_A * tf_time) - tv_start_to_dest;
+				tv_precal *= tf_friction;
+		
+				tv_vt1 = tv_precal;
+				tv_vt2 = tv_precal;
+				
+				tv_vt1 += tv_A * (1.0 - tf_exp_Ft);
+				tv_vt2 += tv_A * (tf_exp_minus_Ft - 1.0);
+				
+				tf_derive_en_t = MTH_VecDotProduct(tv_vt1, tv_vt2);
+			   
+				tf_tangente_en_t = 2.0 * tf_friction;
+				tf_tangente_en_t *= (1.0 - tf_cos_h_Ft);
+				tf_tangente_en_t *= MTH_VecDotProduct(tv_precal, tv_A);
+		
+				tf_last_time = tf_time;
+		
+				tf_time = (tf_tangente_en_t * tf_time) - tf_derive_en_t;
+				tf_time /= tf_tangente_en_t;
+			}
+		}
+		else
+		{
+			// FRICTION SUR X ET Y ET NULLE EN Z	
+			tv_M = tv_start_to_dest;
+		
+			tv_M.x *= tv_M.x;
+			tv_M.y *= tv_M.y;
+			tv_M.z *= tv_M.z;
+		
+			tf_x2_plus_y2 = tv_M.x + tv_M.y;
+		
+			tf_precal_derivee = tf_friction * tf_friction;
+			tf_precal_tangente = tf_precal_derivee * tf_precal_derivee * 0.5 * tf_x2_plus_y2;
+			tf_precal_derivee *= tf_friction * 0.5 * tf_x2_plus_y2;
+		
+			tf_G2_sur_4 = tv_gravity.z * tv_gravity.z;
+			tf_G2_sur_4 *= 0.25;
+
+			while (! MTH_FloatNullToler(tf_time, 0.0001) && (MTH_FloatAbs(tf_time - tf_last_time) > 0.001 && ti_i < 10))
+			{
+				ti_i++;
+			
+				tf_exp_Ft = MTH_FloatExp(tf_friction * tf_time);
+				tf_exp_minus_Ft = 1.0 / tf_exp_Ft;
+		
+				tf_cos_h_Ft = (tf_exp_Ft + tf_exp_minus_Ft) * 0.5;
+				tf_sin_h_Ft = (tf_exp_Ft - tf_exp_minus_Ft) * 0.5;
+		
+				tf_inv_time = 1.0 / tf_time;
+				tf_inv_sqr_time = tf_inv_time * tf_inv_time;
+		
+				tf_derive_en_t = tf_precal_derivee;
+				tf_derive_en_t /= tf_cos_h_Ft - 1.0;
+				tf_derive_en_t += ( (tf_G2_sur_4 * tf_time) - (tv_M.z * tf_inv_sqr_time * tf_inv_time) ) * (tf_exp_minus_Ft - 1.0);
+		
+				// (cosH(FT) - 1.0)^2
+				tf_cos_h_Ft = 1.0 - tf_cos_h_Ft;
+				tf_cos_h_Ft *= tf_cos_h_Ft;
+		
+				tf_tangente_en_t = ( tf_G2_sur_4 + (3.0 * (tv_M.z * tf_inv_sqr_time * tf_inv_sqr_time)) ) * (tf_exp_minus_Ft - 1.0);
+				tf_tangente_en_t -= tf_friction * tf_exp_minus_Ft * ((tv_gravity.z * tf_time) - (tv_M.z * tf_inv_sqr_time * tf_inv_time));
+				tf_tangente_en_t -= tf_precal_tangente * (tf_sin_h_Ft / tf_cos_h_Ft);
+		
+				tf_last_time = tf_time;
+				tf_time -= tf_derive_en_t / tf_tangente_en_t;
+			}
+		}
+	}
+
+	if (ti_flag_Z_friction)
+	{
+		tv_impulsion = (tv_A * tf_time) - tv_start_to_dest;
+		tv_impulsion *= tf_friction;
+		tv_impulsion /= MTH_FloatExp(-tf_friction* tf_time) - 1.0;
+		tv_impulsion += tv_A;
+	}
+	else
+	{
+		tv_impulsion = -tv_start_to_dest;
+		tv_impulsion.z = 0.0;
+		tv_impulsion *= tf_friction;
+		tv_impulsion /= MTH_FloatExp(-tf_friction* tf_time) - 1.0;
+		tv_impulsion.z = (tv_start_to_dest.z / tf_time) - (0.5 * tv_gravity.z * tf_time);
+	}
+
+	return tv_impulsion;
+} 
+
+function vector MTH_VecExtraBlend(vector pv_source,vector pv_dest,float pf_factor)
+{
+	vector tv_temp;
+	tv_temp = pv_dest - pv_source;
+	return pv_source + (tv_temp * pf_factor);
+}
+
+function vector MTH_VecRand(vector pv_min,vector pv_max)
+{
+	return cvector(MTH_FloatRand(pv_min.x,pv_max.x),MTH_FloatRand(pv_min.y,pv_max.y),MTH_FloatRand(pv_min.z,pv_max.z));
+}
+
+function vector MTH_LIB_NearestPosInOBBox(object to_obj, vector tv_pos, vector tv_bv_min, vector tv_bv_max)
+{
+	tv_pos -= @o(to_obj) OBJ_PosGet();
+	tv_pos = @o(to_obj) MTH_VecGlobalToLocal(tv_pos);
+	
+	tv_pos.x = MTH_FloatLimit(tv_pos.x, tv_bv_min.x, tv_bv_max.x);
+	tv_pos.y = MTH_FloatLimit(tv_pos.y, tv_bv_min.y, tv_bv_max.y);
+	tv_pos.z = MTH_FloatLimit(tv_pos.z, tv_bv_min.z, tv_bv_max.z);
+	
+	tv_pos = @o(to_obj) MTH_VecLocalToGlobal(tv_pos);
+	tv_pos += @o(to_obj) OBJ_PosGet();
+
+	return(tv_pos);
+}
+
+function int MTH_LIB_PosInOBBox(object to_obj, vector tv_pos, vector tv_bv_min, vector tv_bv_max)
+{
+	tv_pos -= @o(to_obj) OBJ_PosGet();
+	tv_pos = @o(to_obj) MTH_VecGlobalToLocal(tv_pos);
+	
+	if (tv_pos.x < tv_bv_min.x)
+		return(false);
+	if (tv_pos.x > tv_bv_max.x)
+		return(false);
+
+	if (tv_pos.y < tv_bv_min.y)
+		return(false);
+	if (tv_pos.y > tv_bv_max.y)
+		return(false);
+
+	if (tv_pos.z < tv_bv_min.z)
+		return(false);
+	if (tv_pos.z > tv_bv_max.z)
+		return(false);
+
+
+	return(true);
+}
+
+// ============================================================
+// RETOURNE LE POINT D'INTERSECTION ENTRE UNE DIRECTION ET UNE BV // ============================================================
+function int MTH_LIB_Intersection_Dir_BV(object to_BV, vector tv_bv_min_pos, vector tv_bv_max_pos,vector tv_start_pos, vector tv_dir, float &tf_dist, vector &tv_collide_pos, int ti_flag_inside)
+{
+	int		ti_i;
+	
+	float	tf_X;
+	float	tf_sign;
+	
+	tf_sign = ti_flag_inside ? -1.0 : 1.0;
+
+	for (ti_i = 0; ti_i < 3; ti_i++)
+	{
+		// CHOIX DU COTE DE LA BV
+		switch(ti_i)
+		{
+			// TEST X FACE
+			case 0 :
+
+				if (MTH_FloatNullEpsilon(tv_dir.x))
+					continue;
+				if (tf_sign * tv_dir.x > 0.0)
+					tf_dist = (tv_bv_min_pos.x - tv_start_pos.x) / tv_dir.x;
+				else
+					tf_dist = (tv_bv_max_pos.x - tv_start_pos.x) / tv_dir.x;
+
+				if (tf_dist < 0.0)
+					continue;
+
+				tv_collide_pos = tv_start_pos;
+				tv_collide_pos += tf_dist * tv_dir	;
+		
+				if (tv_collide_pos.y < tv_bv_min_pos.y)
+					continue;
+				if (tv_collide_pos.y > tv_bv_max_pos.y)
+					continue;
+				if (tv_collide_pos.z < tv_bv_min_pos.z)
+					continue;
+				if (tv_collide_pos.z > tv_bv_max_pos.z)
+					continue;
+
+				return(true);
+
+			// TEST Y FACE
+			case 1 :
+
+				if (MTH_FloatNullEpsilon(tv_dir.y))
+					continue;
+				if (tf_sign * tv_dir.y > 0.0)
+					tf_dist = (tv_bv_min_pos.y - tv_start_pos.y) / tv_dir.y;
+				else
+					tf_dist = (tv_bv_max_pos.y - tv_start_pos.y) / tv_dir.y;
+
+				if (tf_dist < 0.0)
+					continue;
+			
+				tv_collide_pos = tv_start_pos;
+				tv_collide_pos += tf_dist * tv_dir;
+		
+				if (tv_collide_pos.x < tv_bv_min_pos.x)
+					continue;
+				if (tv_collide_pos.x > tv_bv_max_pos.x)
+					continue;
+				if (tv_collide_pos.z < tv_bv_min_pos.z)
+					continue;
+				if (tv_collide_pos.z > tv_bv_max_pos.z)
+					continue;
+
+				return(true);
+
+			// TEST Z FACE
+			case 2 :
+
+				if (MTH_FloatNullEpsilon(tv_dir.z))
+					continue;
+				if (tf_sign * tv_dir.z > 0.0)
+					tf_dist = (tv_bv_min_pos.z - tv_start_pos.z) / tv_dir.z;
+				else
+					tf_dist = (tv_bv_max_pos.z - tv_start_pos.z) / tv_dir.z;
+
+				if (tf_dist < 0.0)
+					continue;
+
+				tv_collide_pos = tv_start_pos;
+				tv_collide_pos += tf_dist * tv_dir;
+		
+				if (tv_collide_pos.x < tv_bv_min_pos.x)
+					continue;
+				if (tv_collide_pos.x > tv_bv_max_pos.x)
+					continue;
+				if (tv_collide_pos.y < tv_bv_min_pos.y)
+					continue;
+				if (tv_collide_pos.y > tv_bv_max_pos.y)
+					continue;
+
+				return(true);
+		}
+	}	
+
+	return(false);
+}
+
+
+
+// TRI RAPIDE DES INDEX ===========================================================================
+function int MTH_LIB_Sub_QuickSort_Index_Pivot_Get(int *index, float *value, int ti_start_index, int ti_end_index)
+{
+	int		ti_i;
+	int		ti_pivot_index;
+	int		ti_temp;
+
+	float	tf_pivot_value;
+	
+	ti_pivot_index = ti_start_index;
+	tf_pivot_value = value[index[ti_start_index]];
+	
+	for (ti_i = ti_start_index + 1; ti_i <= ti_end_index; ti_i++)
+	{
+		if (value[index[ti_i]] < tf_pivot_value)
+		{
+			ti_pivot_index++;
+
+			ti_temp = index[ti_i];
+			index[ti_i] = index[ti_pivot_index];
+			index[ti_pivot_index] = ti_temp;
+		}
+	}
+
+	ti_temp = index[ti_start_index];
+	index[ti_start_index] = index[ti_pivot_index];
+	index[ti_pivot_index] = ti_temp;
+	
+	return(ti_pivot_index);
+}
+function void MTH_LIB_Sub_QuickSort_Index(int *index, float *value, int ti_start_index, int ti_end_index)
+{
+	int ti_pivot_index;
+
+	if (ti_start_index < ti_end_index)
+	{
+		ti_pivot_index = MTH_LIB_Sub_QuickSort_Index_Pivot_Get(&index[0], &value[0], ti_start_index, ti_end_index);
+		MTH_LIB_Sub_QuickSort_Index(&index[0], &value[0], ti_start_index, ti_pivot_index);
+		MTH_LIB_Sub_QuickSort_Index(&index[0], &value[0], ti_pivot_index + 1, ti_end_index);
+	}
+}
+function void MTH_LIB_QuickSort_OrderIndex(int *index, float *value, int ti_array_size)
+{
+	int		ti_i;
+
+	for (ti_i = 0; ti_i < ti_array_size; ti_i++)
+		index[ti_i] = ti_i;
+
+	MTH_LIB_Sub_QuickSort_Index(&index[0], &value[0], 0, ti_array_size - 1);
+}
+

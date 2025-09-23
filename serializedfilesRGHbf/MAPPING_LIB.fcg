@@ -1,0 +1,44 @@
+function int MAPPING_MoveForward()
+{
+	return (IO_KeyboardKeyPressed(VK_UP) | IO_KeyboardKeyPressed(90));
+}
+
+function int MAPPING_MoveBackward()
+{
+	return (IO_KeyboardKeyPressed(VK_DOWN) | IO_KeyboardKeyPressed(83));
+}
+
+function int MAPPING_StraffLeft()
+{
+	return (IO_KeyboardKeyPressed(VK_LEFT) | IO_KeyboardKeyPressed(81));
+}
+
+function int MAPPING_StraffRight()
+{
+	return (IO_KeyboardKeyPressed(VK_RIGHT) | IO_KeyboardKeyPressed(68));
+}
+
+function int MAPPING_Jump()
+{
+	return (IO_KeyboardKeyJustPressed(VK_SPACE) | IO_KeyboardKeyJustPressed(VK_NUMPAD0) | IO_KeyboardKeyJustPressed(VK_CONTROL));
+}
+
+function int MAPPING_JumpPress()
+{
+	return (IO_KeyboardKeyPressed(VK_SPACE) | IO_KeyboardKeyPressed(VK_NUMPAD0) | IO_KeyboardKeyPressed(VK_CONTROL));
+}
+
+function int MAPPING_TakeDrop()
+{
+	return (IO_JoystickButtonJustPressed(0, Ci_JOY_Button_Jump ) | IO_MouseButtonJustPressed(mouse_button_right));
+}
+
+function int MAPPING_Action()
+{
+	return (IO_JoystickButtonJustPressed(0, Ci_JOY_Button_Shoot ) | IO_MouseButtonJustPressed(mouse_button_left));
+}
+
+function int MAPPING_Pump()
+{
+	return (IO_KeyboardKeyJustPressed(VK_UP) | IO_JoystickButtonJustPressed(0,Ci_JOY_Button_Pump) | IO_KeyboardKeyJustPressed(90) );
+}
