@@ -11,3 +11,5 @@ This project will use the [CMake](https://cmake.org/) build system, which allows
 [Ubisoft](https://www.ubisoft.com/) - Publisher(s)
 # Credits (GitHub Repo)
 README style inspired from [ISLE](https://github.com/isledecomp/isle).
+# CONTRIBUTING
+Make sure to join this [server](https://discord.gg/2PVFsUZxmV) to stay updated and apply!
